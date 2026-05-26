@@ -5,17 +5,20 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
     exit;
 }
 require 'api/db_connect.php';
+require 'api/helpers.php';
 
-// Fetch current user details
-$stmt = $pdo->prepare("SELECT first_name, last_name, email, phone FROM users WHERE user_id = ?");
+$stmt = $pdo->prepare('SELECT full_name, email, phone FROM users WHERE id = ?');
 $stmt->execute([$_SESSION['user_id']]);
-$user = $stmt->fetch();
+$row = $stmt->fetch();
+$user = splitFullName($row['full_name'] ?? '');
+$user['email'] = $row['email'] ?? '';
+$user['phone'] = $row['phone'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Profile | MediConnect</title>
+    <title>My Profile | MedConnect</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>

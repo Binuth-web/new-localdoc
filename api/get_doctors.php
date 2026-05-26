@@ -1,24 +1,34 @@
 <?php
 require 'db_connect.php';
+require 'helpers.php';
 header('Content-Type: application/json');
 
-$center_id = isset($_GET['center_id']) ? (int)$_GET['center_id'] : 0;
-
-if (!$center_id) {
-    echo json_encode(["status" => "error", "message" => "Center ID required"]);
+$centerId = isset($_GET['center_id']) ? (int) $_GET['center_id'] : 0;
+if (!$centerId) {
+    echo json_encode(['status' => 'error', 'message' => 'Center ID required']);
     exit;
 }
 
-$sql = "SELECT d.doctor_id, d.specialization, u.first_name, u.last_name,
-               a.availability_id, a.date, a.start_time, a.end_time
-        FROM doctors d
-        JOIN users u ON d.user_id = u.user_id
-        LEFT JOIN availability a ON d.doctor_id = a.doctor_id AND a.is_booked = FALSE
-        WHERE d.center_id = ?
-        ORDER BY d.doctor_id, a.date, a.start_time";
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$center_id]);
-$doctors = $stmt->fetchAll();
+$rows = [];
 
-echo json_encode(["status" => "success", "data" => $doctors]);
-?>
+if (hasOpdTables($pdo)) {
+    $sql = "SELECT os.id AS availability_id,
+                   os.id AS doctor_id,
+                   os.opd_name AS specialization,
+                   COALESCE(os.doctor_name, os.opd_name, 'OPD') AS first_name,
+                   '' AS last_name,
+                   os.session_date AS date,
+                   os.start_time,
+                   os.end_time
+            FROM opd_sessions os
+            WHERE os.clinic_id = ?
+              AND os.is_active = 1
+              AND os.session_date >= CURDATE()
+              AND os.current_token < os.max_tokens
+            ORDER BY os.session_date, os.start_time";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$centerId]);
+    $rows = $stmt->fetchAll();
+}
+
+echo json_encode(['status' => 'success', 'data' => $rows]);

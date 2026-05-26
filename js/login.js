@@ -5,6 +5,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (roleParam && ['patient', 'medical_staff', 'admin'].includes(roleParam)) {
         switchTab(roleParam);
     }
+
+    const redirect = urlParams.get('redirect');
+    if (redirect) {
+        const note = document.createElement('p');
+        note.style.cssText = 'text-align:center;color:var(--text-muted);font-size:0.9rem;margin:0 2rem 1rem;';
+        note.textContent = 'Please log in to continue.';
+        const box = document.querySelector('.login-box');
+        if (box) box.insertBefore(note, box.querySelector('.login-tabs'));
+    }
 });
 
 function switchTab(role) {
@@ -39,6 +48,11 @@ function handleLogin(event) {
     event.preventDefault();
     const form = document.getElementById('loginForm');
     const formData = new FormData(form);
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect');
+    if (redirect && formData.get('role') === 'patient') {
+        formData.append('redirect', redirect);
+    }
     const alertBox = document.getElementById('alert-box');
     const submitBtn = document.getElementById('submit-btn');
 

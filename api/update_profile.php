@@ -1,43 +1,48 @@
 <?php
-session_start();
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
-    echo json_encode(["status" => "error", "message" => "Unauthorized access."]);
-    exit;
-}
 require 'db_connect.php';
+require 'helpers.php';
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $firstName = filter_input(INPUT_POST, 'first_name', FILTER_SANITIZE_STRING);
-    $lastName = filter_input(INPUT_POST, 'last_name', FILTER_SANITIZE_STRING);
-    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-    $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
-    $password = $_POST['password'] ?? '';
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized access.']);
+    exit;
+}
 
-    if (!$firstName || !$lastName || !$email) {
-        echo json_encode(["status" => "error", "message" => "Name and email are required."]);
-        exit;
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    exit;
+}
+
+$firstName = trim((string) ($_POST['first_name'] ?? ''));
+$lastName = trim((string) ($_POST['last_name'] ?? ''));
+$email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+$phone = trim((string) ($_POST['phone'] ?? ''));
+$password = $_POST['password'] ?? '';
+
+if (!$firstName || !$email) {
+    echo json_encode(['status' => 'error', 'message' => 'Name and email are required.']);
+    exit;
+}
+
+$fullName = trim($firstName . ' ' . $lastName);
+
+try {
+    if ($password !== '') {
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare(
+            'UPDATE users SET full_name = ?, email = ?, phone = ?, hashed_password = ? WHERE id = ?'
+        );
+        $stmt->execute([$fullName, $email, $phone ?: null, $hash, $_SESSION['user_id']]);
+    } else {
+        $stmt = $pdo->prepare('UPDATE users SET full_name = ?, email = ?, phone = ? WHERE id = ?');
+        $stmt->execute([$fullName, $email, $phone ?: null, $_SESSION['user_id']]);
     }
 
-    try {
-        if (!empty($password)) {
-            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE users SET first_name=?, last_name=?, email=?, phone=?, password_hash=? WHERE user_id=?");
-            $stmt->execute([$firstName, $lastName, $email, $phone, $passwordHash, $_SESSION['user_id']]);
-        } else {
-            $stmt = $pdo->prepare("UPDATE users SET first_name=?, last_name=?, email=?, phone=? WHERE user_id=?");
-            $stmt->execute([$firstName, $lastName, $email, $phone, $_SESSION['user_id']]);
-        }
-        
-        $_SESSION['name'] = $firstName; // Update session name
-        
-        echo json_encode(["status" => "success", "message" => "Profile updated successfully!"]);
-    } catch (PDOException $e) {
-        if ($e->getCode() == 23000) {
-            echo json_encode(["status" => "error", "message" => "That email is already in use by another account."]);
-        } else {
-            echo json_encode(["status" => "error", "message" => "Failed to update profile."]);
-        }
+    $_SESSION['name'] = $firstName;
+    echo json_encode(['status' => 'success', 'message' => 'Profile updated successfully!']);
+} catch (PDOException $e) {
+    if ((int) $e->getCode() === 23000) {
+        echo json_encode(['status' => 'error', 'message' => 'That email is already in use by another account.']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update profile.']);
     }
 }
-?>

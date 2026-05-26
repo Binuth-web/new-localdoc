@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediConnect | Find Care Near You</title>
+    <title>MedConnect | Find Care Near You</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -14,53 +13,70 @@
         <a href="index.html" class="navbar-brand">
             <i class="fa-solid fa-heart-pulse"></i> MedConnect
         </a>
-        <div class="navbar-nav">
+        <div class="navbar-nav" id="main-nav">
             <a href="#centers-section">Get Appointment</a>
-            <a href="dashboard_patient.php">My Appointments</a>
-            <a href="profile.php">My Profile</a>
-            <a href="login.html" class="btn-login">Login</a>
+            <a href="login.html?redirect=dashboard_patient.php" id="nav-appointments">My Appointments</a>
+            <a href="login.html?redirect=profile.php" id="nav-profile">My Profile</a>
+            <a href="login.html" class="btn-login" id="nav-auth">Login</a>
         </div>
     </nav>
 
     <section class="hero">
-        <h1>Find the Best Medical Care Near You</h1>
-        <p>Book appointments with top specialists at centers closest to your location in just a few clicks.</p>
-        
+        <h1>Welcome to MedConnect</h1>
+        <p>Browse medical centers in Kandy, check if they are open, and book an appointment. New patients can register when choosing a center.</p>
+
+        <div class="patient-quick-links">
+            <a href="#centers-section" class="quick-link-card">
+                <i class="fa-solid fa-calendar-plus"></i>
+                <span>Get Appointment</span>
+            </a>
+            <a href="login.html?redirect=dashboard_patient.php" class="quick-link-card" id="quick-appointments">
+                <i class="fa-solid fa-list-check"></i>
+                <span>My Appointments</span>
+            </a>
+            <a href="login.html?redirect=profile.php" class="quick-link-card" id="quick-profile">
+                <i class="fa-solid fa-user"></i>
+                <span>My Profile</span>
+            </a>
+            <a href="login.html" class="quick-link-card" id="quick-login">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                <span>Login</span>
+            </a>
+        </div>
+
         <div class="location-prompt">
-            <h3 style="color:var(--secondary)">Let us find centers near you</h3>
+            <h3 style="color:var(--secondary)">Find centers near you</h3>
             <button class="btn-primary" id="btn-gps" onclick="requestLocation()">
                 <i class="fa-solid fa-location-crosshairs"></i> Use My Current Location
             </button>
             <div class="fallback-input" id="fallback-ui">
-                <input type="text" id="city-input" placeholder="Enter your city (e.g. Metropolis)">
+                <input type="text" id="city-input" placeholder="Enter your city (e.g. Kandy)">
                 <button class="btn-primary" onclick="searchByCity()">Search</button>
             </div>
-            <p style="font-size: 0.8rem; color: var(--text-muted); cursor: pointer;" onclick="document.getElementById('fallback-ui').style.display = 'flex'">
+            <p class="manual-location-hint" onclick="document.getElementById('fallback-ui').style.display = 'flex'">
                 Enter location manually instead
             </p>
         </div>
     </section>
 
-    <section class="centers-section">
-        <h2 class="section-title" id="centers-title">Available Medical Centers</h2>
+    <section class="centers-section" id="centers-section">
+        <h2 class="section-title" id="centers-title">Medical Centers</h2>
+        <p class="section-subtitle">Each center shows its location on Google Maps, contact number, and whether it is open right now.</p>
         <div class="centers-grid" id="centers-container">
-            <!-- Centers will be loaded here dynamically via JS -->
-            <p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Please use the location tool above to see nearby centers.</p>
+            <p class="centers-loading">Loading medical centers…</p>
         </div>
-        
+
         <div class="staff-login-snippet">
-            Medical Staff Member? <a href="login.html?role=medical_staff">Log in to your portal</a>
+            Medical staff? <a href="login.html?role=medical_staff">Log in to your portal</a>
         </div>
     </section>
 
     <div class="modal-overlay" id="doctor-modal">
         <div class="modal-content">
-            <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            <button class="modal-close" onclick="closeModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
             <h2 id="modal-center-name" style="margin-bottom: 0.5rem; color: var(--primary);">Center Name</h2>
-            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Available Doctors and Sessions</p>
-            <div id="modal-doctor-list">
-                <!-- Doctors will be loaded here -->
-            </div>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Available doctors and sessions</p>
+            <div id="modal-doctor-list"></div>
         </div>
     </div>
 
