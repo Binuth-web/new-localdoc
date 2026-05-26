@@ -37,6 +37,11 @@ function initSessionNav() {
                 quickLogin.querySelector('span').textContent = 'Logout';
                 quickLogin.querySelector('i').className = 'fa-solid fa-right-from-bracket';
             }
+
+            const locationPrompt = document.getElementById('location-prompt-container');
+            if (locationPrompt) {
+                locationPrompt.style.display = 'block';
+            }
         })
         .catch(() => {});
 }
