@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | MedConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh; padding: 2rem 0;">
+
+    <nav class="navbar" style="position: absolute; width: 100%; top: 0;">
+        <a href="index.html" class="navbar-brand">MedConnect</a>
+    </nav>
+
+    <div style="max-width: 600px; margin: 4rem auto 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: var(--shadow-lg);">
+        <h2 style="color: var(--secondary); text-align: center; margin-bottom: 0.5rem;" id="reg-title">Create Account</h2>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;" id="reg-subtitle">Sign up to continue</p>
+        
+        <div id="reg-alert" class="alert"></div>
+
+        <form id="standaloneRegisterForm" onsubmit="handleFullRegistration(event)">
+            <input type="hidden" name="center_name" id="center_name_input">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="first_name" class="form-control" placeholder="First Name" required>
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <input type="text" name="last_name" class="form-control" placeholder="Last Name" required>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Email Address</label>
+                <input type="email" name="email" class="form-control" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Phone Number</label>
+                <input type="text" name="phone" class="form-control" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Date of Birth</label>
+                <input type="date" name="dob" class="form-control" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" id="reg-password" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="reg-confirm" class="form-control" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%;">Register</button>
+            
+            <div style="text-align: center; margin-top: 1rem; font-size: 0.9rem;">
+                Already have an account? <a href="login.html" style="color: var(--primary); text-decoration: none;">Login</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const centerName = urlParams.get('center');
+            if (centerName) {
+                document.getElementById('reg-title').innerText = `Creating account to book at ${centerName}`;
+                document.getElementById('reg-subtitle').innerText = `Please register to finalize your appointment.`;
+                document.getElementById('center_name_input').value = centerName;
+            }
+        });
+
+        function handleFullRegistration(event) {
+            event.preventDefault();
+            const pw = document.getElementById('reg-password').value;
+            const confirmPw = document.getElementById('reg-confirm').value;
+            const alertBox = document.getElementById('reg-alert');
+            const submitBtn = document.getElementById('reg-submit-btn');
+
+            if (pw !== confirmPw) {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'Passwords do not match.';
+                alertBox.style.display = 'block';
+                return;
+            }
+
+            submitBtn.innerText = 'Registering...';
+            submitBtn.disabled = true;
+
+            const formData = new FormData(event.target);
+            
+            fetch('api/register.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alertBox.className = 'alert success';
+                    alertBox.innerText = "Registration successful! Redirecting to book your appointment…";
+                    alertBox.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } else {
+                    alertBox.className = 'alert error';
+                    alertBox.innerText = data.message;
+                    alertBox.style.display = 'block';
+                    submitBtn.innerText = 'Register';
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'Network error.';
+                alertBox.style.display = 'block';
+                submitBtn.innerText = 'Register';
+                submitBtn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>

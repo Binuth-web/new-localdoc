@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | MediConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="navbar-brand">MediConnect</a>
+    </nav>
+
+    <div class="login-wrapper">
+        <div class="login-box">
+            <div class="login-header">
+                <h2>Welcome Back</h2>
+                <p>Please log in to your account</p>
+            </div>
+            
+            <div class="login-tabs">
+                <button class="tab-btn active" data-role="patient" onclick="switchTab('patient')">Patient</button>
+                <button class="tab-btn" data-role="medical_staff" onclick="switchTab('medical_staff')">Medical Staff</button>
+                <button class="tab-btn" data-role="admin" onclick="switchTab('admin')">Admin</button>
+            </div>
+
+            <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
+                <input type="hidden" id="role" name="role" value="patient">
+                
+                <div id="alert-box" class="alert"></div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" required placeholder="Enter your email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" required placeholder="Enter your password">
+                </div>
+
+                <button type="submit" class="btn-primary" id="submit-btn" style="width: 100%; margin-top: 0.5rem;">
+                    Log in as Patient
+                </button>
+
+                <div class="login-footer" id="register-link">
+                    Don't have an account? <a href="#" onclick="toggleRegister(true); return false;">Register here</a>
+                </div>
+            </form>
+
+            <form class="login-form" id="registerForm" style="display: none;" onsubmit="handleRegister(event)">
+                <div id="reg-alert-box" class="alert"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" name="phone" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%; margin-top: 0.5rem;">
+                    Create Account
+                </button>
+
+                <div class="login-footer">
+                    Already have an account? <a href="#" onclick="toggleRegister(false); return false;">Log in here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/login.js"></script>
+</body>
+</html>

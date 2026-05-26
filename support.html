@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support & FAQ | MediConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="navbar-brand">
+            <i class="fa-solid fa-heart-pulse"></i> MediConnect
+        </a>
+        <div class="navbar-nav">
+            <a href="index.html">Home</a>
+            <a href="support.html" style="color: var(--primary);">Support</a>
+            <a href="login.html" class="btn-login">Login</a>
+        </div>
+    </nav>
+
+    <div style="max-width: 1200px; margin: 3rem auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;">
+        
+        <!-- FAQ Section -->
+        <div>
+            <h2 style="color: var(--secondary); margin-bottom: 1.5rem;">Frequently Asked Questions</h2>
+            <div style="margin-bottom: 1rem;">
+                <h4 style="color: var(--primary);">How do I book an appointment?</h4>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Search for a nearby medical center on the homepage, click "View Doctors", and follow the prompts to book an appointment.</p>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <h4 style="color: var(--primary);">Do I need an account to book?</h4>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Yes. While you can view available centers and doctors publicly, you must create a Patient account to confirm a booking.</p>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <h4 style="color: var(--primary);">How does the location feature work?</h4>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">We request your device's GPS coordinates and use the Haversine formula to sort medical centers by physical distance to you.</p>
+            </div>
+        </div>
+
+        <!-- Contact Form -->
+        <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: var(--shadow-lg);">
+            <h2 style="color: var(--secondary); margin-bottom: 1.5rem;">Contact Admin</h2>
+            <div id="contact-alert" class="alert"></div>
+            <form id="contactForm" onsubmit="submitContact(event)">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Full Name</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Email Address</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Subject</label>
+                    <input type="text" name="subject" class="form-control" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Message</label>
+                    <textarea name="message" class="form-control" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">Send Message</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function submitContact(event) {
+            event.preventDefault();
+            const form = document.getElementById('contactForm');
+            const alertBox = document.getElementById('contact-alert');
+            const formData = new FormData(form);
+
+            fetch('api/submit_contact.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                alertBox.style.display = 'block';
+                if(data.status === 'success') {
+                    alertBox.className = 'alert success';
+                    alertBox.innerText = data.message;
+                    form.reset();
+                } else {
+                    alertBox.className = 'alert error';
+                    alertBox.innerText = data.message;
+                }
+            })
+            .catch(err => {
+                alertBox.style.display = 'block';
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'Network error occurred.';
+            });
+        }
+    </script>
+</body>
+</html>
