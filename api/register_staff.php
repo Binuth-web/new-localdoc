@@ -8,13 +8,20 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $firstName = trim((string) ($_POST['first_name'] ?? ''));
 $lastName = trim((string) ($_POST['last_name'] ?? ''));
-$email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+$email = trim((string) ($_POST['email'] ?? ''));
 $phone = trim((string) ($_POST['phone'] ?? ''));
 $password = $_POST['password'] ?? '';
-$centerId = filter_input(INPUT_POST, 'center_id', FILTER_VALIDATE_INT);
+$centerId = !empty($_POST['center_id']) ? (int)$_POST['center_id'] : 0;
 
-if (!$firstName || !$lastName || !$email || !$password || !$centerId) {
-    echo json_encode(['status' => 'error', 'message' => 'All fields are required.']);
+$missing = [];
+if (!$firstName) $missing[] = 'First Name';
+if (!$lastName) $missing[] = 'Last Name';
+if (!$email) $missing[] = 'Email';
+if (!$password) $missing[] = 'Password';
+if (!$centerId) $missing[] = 'Medical Center';
+
+if (!empty($missing)) {
+    echo json_encode(['status' => 'error', 'message' => 'Missing fields: ' . implode(', ', $missing)]);
     exit;
 }
 

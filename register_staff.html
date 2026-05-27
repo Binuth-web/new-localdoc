@@ -76,8 +76,8 @@
                     if (data.status === 'success') {
                         data.data.forEach(center => {
                             const option = document.createElement('option');
-                            option.value = center.id;
-                            option.textContent = center.name + (center.area ? ` (${center.area})` : '');
+                            option.value = center.center_id;
+                            option.textContent = center.name + (center.city ? ` (${center.city})` : '');
                             select.appendChild(option);
                         });
                     }
