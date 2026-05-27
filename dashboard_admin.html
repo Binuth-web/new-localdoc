@@ -4,12 +4,189 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .dashboard-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #f8fafc;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .btn-success { background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-danger { background-color: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
 </head>
 <body style="padding: 2rem; background: #f8fafc;">
-    <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 800px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <h1 style="color: var(--primary);">Admin Dashboard</h1>
-        <p>System Administration Area. Manage users, centers, and system settings.</p>
-        <a href="login.html" class="btn-primary" style="display: inline-block; padding: 0.5rem 1rem; border-radius: 4px; margin-top: 1rem; text-decoration:none;">Logout</a>
+    
+    <div class="dashboard-container">
+        <div class="card" style="text-align: center;">
+            <h1 style="color: var(--primary);">Admin Dashboard</h1>
+            <p>System Administration Area. Manage users, centers, and system settings.</p>
+            <a href="api/logout.php" class="btn-primary" style="display: inline-block; padding: 0.5rem 1rem; border-radius: 4px; margin-top: 1rem; text-decoration:none;">Logout</a>
+        </div>
+
+        <div class="card">
+            <h2>Add Medical Center</h2>
+            <div id="addCenterAlert" class="alert" style="display:none; margin-bottom: 1rem;"></div>
+            <form id="addCenterForm" onsubmit="addCenter(event)">
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Center Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type (e.g. Hospital, Clinic)</label>
+                        <input type="text" name="type" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Area / City</label>
+                        <input type="text" name="area" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" name="phone" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Full Address</label>
+                    <input type="text" name="address" class="form-control" required>
+                </div>
+                <button type="submit" class="btn-primary">Add Medical Center</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Pending Staff Requests</h2>
+            <div id="staffAlert" class="alert" style="display:none; margin-bottom: 1rem;"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Requested Center</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="pendingStaffTableBody">
+                    <tr><td colspan="4">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', fetchPendingStaff);
+
+        function addCenter(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const alertBox = document.getElementById('addCenterAlert');
+
+            fetch('api/add_center.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                alertBox.style.display = 'block';
+                alertBox.className = 'alert ' + (data.status === 'success' ? 'success' : 'error');
+                alertBox.textContent = data.message;
+                if (data.status === 'success') {
+                    event.target.reset();
+                }
+            });
+        }
+
+        function fetchPendingStaff() {
+            fetch('api/get_pending_staff.php')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('pendingStaffTableBody');
+                    tbody.innerHTML = '';
+                    if (data.status === 'success' && data.data.length > 0) {
+                        data.data.forEach(staff => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${staff.full_name}</td>
+                                <td>${staff.email}</td>
+                                <td>${staff.center_name || 'N/A'}</td>
+                                <td>
+                                    <button class="btn-sm btn-success" onclick="approveStaff(${staff.id})">Approve</button>
+                                    <button class="btn-sm btn-danger" onclick="rejectStaff(${staff.id})">Reject</button>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="4">No pending staff requests.</td></tr>';
+                    }
+                });
+        }
+
+        function approveStaff(userId) {
+            if(!confirm('Approve this staff member?')) return;
+            const formData = new FormData();
+            formData.append('user_id', userId);
+            
+            fetch('api/approve_staff.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                showStaffAlert(data.message, data.status);
+                fetchPendingStaff();
+            });
+        }
+
+        function rejectStaff(userId) {
+            if(!confirm('Reject and delete this staff request?')) return;
+            const formData = new FormData();
+            formData.append('user_id', userId);
+            
+            fetch('api/reject_staff.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                showStaffAlert(data.message, data.status);
+                fetchPendingStaff();
+            });
+        }
+
+        function showStaffAlert(msg, type) {
+            const alertBox = document.getElementById('staffAlert');
+            alertBox.style.display = 'block';
+            alertBox.className = 'alert ' + (type === 'success' ? 'success' : 'error');
+            alertBox.textContent = msg;
+            setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
+        }
+    </script>
 </body>
 </html>

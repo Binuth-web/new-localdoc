@@ -32,9 +32,13 @@ function switchTab(role) {
     const btnText = role === 'medical_staff' ? 'Medical Staff' : role.charAt(0).toUpperCase() + role.slice(1);
     document.getElementById('submit-btn').innerText = `Log in as ${btnText}`;
 
-    // Show/hide register link (Only patients can register publicly)
+    // Show/hide register link
     const registerLink = document.getElementById('register-link');
     if (role === 'patient') {
+        registerLink.innerHTML = `Don't have an account? <a href="#" onclick="toggleRegister(true); return false;">Register here</a>`;
+        registerLink.style.display = 'block';
+    } else if (role === 'medical_staff') {
+        registerLink.innerHTML = `Medical staff? <a href="register_staff.html">Register here</a> (requires admin approval)`;
         registerLink.style.display = 'block';
     } else {
         registerLink.style.display = 'none';

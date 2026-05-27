@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Registration | MedConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="auth-page">
+
+    <nav class="navbar auth-navbar">
+        <a href="index.html" class="navbar-brand">
+            <i class="fa-solid fa-heart-pulse"></i> MedConnect
+        </a>
+        <div class="navbar-nav">
+            <a href="index.html">Back to home</a>
+            <a href="login.html" class="btn-login">Login</a>
+        </div>
+    </nav>
+
+    <div class="auth-card">
+        <h2>Medical Staff Registration</h2>
+        <p>Register as medical staff for your center. Requires admin approval.</p>
+
+        <div id="reg-alert" class="alert"></div>
+
+        <form id="staffRegisterForm" onsubmit="handleStaffRegistration(event)">
+            <div class="form-group">
+                <label>Medical Center</label>
+                <select name="center_id" id="center_select" class="form-control" required>
+                    <option value="">Loading centers...</option>
+                </select>
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" name="email" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" name="phone" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%;">Register Staff Account</button>
+
+            <p class="auth-footer">
+                Already registered? <a href="login.html">Log in here</a>
+            </p>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('api/get_centers.php')
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('center_select');
+                    select.innerHTML = '<option value="">Select your medical center</option>';
+                    if (data.status === 'success') {
+                        data.data.forEach(center => {
+                            const option = document.createElement('option');
+                            option.value = center.id;
+                            option.textContent = center.name + (center.area ? ` (${center.area})` : '');
+                            select.appendChild(option);
+                        });
+                    }
+                });
+        });
+
+        function handleStaffRegistration(event) {
+            event.preventDefault();
+
+            const alertBox = document.getElementById('reg-alert');
+            const submitBtn = document.getElementById('reg-submit-btn');
+
+            submitBtn.textContent = 'Registering…';
+            submitBtn.disabled = true;
+
+            fetch('api/register_staff.php', {
+                method: 'POST',
+                body: new FormData(event.target),
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.status === 'success') {
+                        alertBox.className = 'alert success';
+                        alertBox.textContent = data.message;
+                        alertBox.style.display = 'block';
+                        setTimeout(() => {
+                            window.location.href = data.redirect || 'login.html';
+                        }, 3000);
+                    } else {
+                        alertBox.className = 'alert error';
+                        alertBox.textContent = data.message;
+                        alertBox.style.display = 'block';
+                        submitBtn.textContent = 'Register Staff Account';
+                        submitBtn.disabled = false;
+                    }
+                })
+                .catch(() => {
+                    alertBox.className = 'alert error';
+                    alertBox.textContent = 'Network error. Please try again.';
+                    alertBox.style.display = 'block';
+                    submitBtn.textContent = 'Register Staff Account';
+                    submitBtn.disabled = false;
+                });
+        }
+    </script>
+</body>
+
+</html>
