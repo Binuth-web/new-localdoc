@@ -17,7 +17,7 @@ if (!$email || !$password) {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT id, hashed_password, role, full_name, is_active FROM users WHERE email = ?');
+$stmt = $pdo->prepare('SELECT id, hashed_password, role, full_name, is_active, center_id FROM users WHERE email = ?');
 $stmt->execute([$email]);
 $user = $stmt->fetch();
 
@@ -40,6 +40,9 @@ $nameParts = splitFullName($user['full_name']);
 $_SESSION['user_id'] = (int) $user['id'];
 $_SESSION['role'] = $user['role'] === 'staff' ? 'medical_staff' : $user['role'];
 $_SESSION['name'] = $nameParts['first_name'];
+if (isset($user['center_id'])) {
+    $_SESSION['center_id'] = (int) $user['center_id'];
+}
 
 $redirect = $_POST['redirect'] ?? '';
 $patientRedirects = ['index.html', 'dashboard_patient.php', 'profile.php'];
@@ -50,7 +53,7 @@ if ($user['role'] === 'patient') {
         $redirect = $bookCenter ? 'index.html?book_center=' . $bookCenter : 'index.html';
     }
 } elseif ($user['role'] === 'staff') {
-    $redirect = 'dashboard_staff.html';
+    $redirect = 'dashboard_staff.php';
 } elseif ($user['role'] === 'admin') {
     $redirect = 'dashboard_admin.html';
 }

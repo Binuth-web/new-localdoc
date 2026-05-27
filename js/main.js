@@ -1,4 +1,6 @@
 let patientLoggedIn = false;
+let userLatitude = null;
+let userLongitude = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await initSessionNav();
@@ -61,6 +63,8 @@ function requestLocation() {
             (position) => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
+                userLatitude = lat;
+                userLongitude = lng;
                 document.getElementById('centers-title').innerText = 'Medical Centers Near You';
                 fetchCenters(`lat=${lat}&lng=${lng}`);
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> Location Found';
@@ -143,7 +147,10 @@ function renderCenterCard(container, center) {
         distanceHtml = `<div class="distance-badge"><i class="fa-solid fa-location-dot"></i> ${parseFloat(center.distance).toFixed(2)} km away</div>`;
     }
 
-    const mapsLink = `https://www.google.com/maps?q=${center.latitude},${center.longitude}`;
+    let mapsLink = `https://www.google.com/maps?q=${center.latitude},${center.longitude}`;
+    if (userLatitude !== null && userLongitude !== null) {
+        mapsLink = `https://www.google.com/maps/dir/?api=1&origin=${userLatitude},${userLongitude}&destination=${center.latitude},${center.longitude}`;
+    }
     const mapIframe = `<iframe
         width="100%"
         height="200"
@@ -274,7 +281,6 @@ function viewDoctors(centerId, centerName) {
                             : escapeHtml(displayName);
                     block.innerHTML = `
                         <h4 style="color: var(--secondary);">${docLabel}</h4>
-                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">${escapeHtml(doc.spec)}</p>
                         ${sessionsHtml}
                     `;
                     block.querySelectorAll('.session-book-btn').forEach((btn) => {

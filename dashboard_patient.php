@@ -62,7 +62,6 @@ if (hasOpdTables($pdo)) {
                                     Token <?php echo htmlspecialchars($apt['token_number']); ?> —
                                 <?php endif; ?>
                                 <?php echo htmlspecialchars($apt['doctor_first']); ?>
-                                (<?php echo htmlspecialchars($apt['specialization']); ?>)
                             </h4>
                             <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0.25rem 0;">
                                 <i class="fa-solid fa-hospital"></i> <?php echo htmlspecialchars($apt['center_name']); ?>
