@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
@@ -12,40 +13,62 @@
             grid-template-columns: 1fr;
             gap: 2rem;
         }
+
         .card {
             background: white;
             padding: 2rem;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
         }
-        th, td {
+
+        th,
+        td {
             text-align: left;
             padding: 0.75rem;
             border-bottom: 1px solid #e2e8f0;
         }
+
         th {
             background-color: #f8fafc;
         }
+
         .btn-sm {
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
         }
-        .btn-success { background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .btn-danger { background-color: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; }
+
+        .btn-success {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
+
 <body style="padding: 2rem; background: #f8fafc;">
-    
+
     <div class="dashboard-container">
         <div class="card" style="text-align: center;">
             <h1 style="color: var(--primary);">Admin Dashboard</h1>
             <p>System Administration Area. Manage users, centers, and system settings.</p>
-            <a href="api/logout.php" class="btn-primary" style="display: inline-block; padding: 0.5rem 1rem; border-radius: 4px; margin-top: 1rem; text-decoration:none;">Logout</a>
+            <a href="api/logout.php" class="btn-primary"
+                style="display: inline-block; padding: 0.5rem 1rem; border-radius: 4px; margin-top: 1rem; text-decoration:none;">Logout</a>
         </div>
 
         <div class="card">
@@ -93,7 +116,9 @@
                     </tr>
                 </thead>
                 <tbody id="pendingStaffTableBody">
-                    <tr><td colspan="4">Loading...</td></tr>
+                    <tr>
+                        <td colspan="4">Loading...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -111,15 +136,15 @@
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
-            .then(data => {
-                alertBox.style.display = 'block';
-                alertBox.className = 'alert ' + (data.status === 'success' ? 'success' : 'error');
-                alertBox.textContent = data.message;
-                if (data.status === 'success') {
-                    event.target.reset();
-                }
-            });
+                .then(res => res.json())
+                .then(data => {
+                    alertBox.style.display = 'block';
+                    alertBox.className = 'alert ' + (data.status === 'success' ? 'success' : 'error');
+                    alertBox.textContent = data.message;
+                    if (data.status === 'success') {
+                        event.target.reset();
+                    }
+                });
         }
 
         function fetchPendingStaff() {
@@ -149,35 +174,35 @@
         }
 
         function approveStaff(userId) {
-            if(!confirm('Approve this staff member?')) return;
+            if (!confirm('Approve this staff member?')) return;
             const formData = new FormData();
             formData.append('user_id', userId);
-            
+
             fetch('api/approve_staff.php', {
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
-            .then(data => {
-                showStaffAlert(data.message, data.status);
-                fetchPendingStaff();
-            });
+                .then(res => res.json())
+                .then(data => {
+                    showStaffAlert(data.message, data.status);
+                    fetchPendingStaff();
+                });
         }
 
         function rejectStaff(userId) {
-            if(!confirm('Reject and delete this staff request?')) return;
+            if (!confirm('Reject and delete this staff request?')) return;
             const formData = new FormData();
             formData.append('user_id', userId);
-            
+
             fetch('api/reject_staff.php', {
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
-            .then(data => {
-                showStaffAlert(data.message, data.status);
-                fetchPendingStaff();
-            });
+                .then(res => res.json())
+                .then(data => {
+                    showStaffAlert(data.message, data.status);
+                    fetchPendingStaff();
+                });
         }
 
         function showStaffAlert(msg, type) {
@@ -189,4 +214,5 @@
         }
     </script>
 </body>
+
 </html>
