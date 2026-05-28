@@ -33,8 +33,10 @@ try {
     $pdo->beginTransaction();
 
     $stmt = $pdo->prepare(
-        'SELECT id, clinic_id, current_token, max_tokens, session_date, start_time
-         FROM opd_sessions WHERE id = ? AND status = 'active' FOR UPDATE'
+        "SELECT os.id, os.clinic_id, os.current_token, os.max_tokens, os.session_date, os.start_time, mc.online_booking_enabled
+         FROM opd_sessions os 
+         JOIN medical_centers mc ON os.clinic_id = mc.id 
+         WHERE os.id = ? AND os.status = 'active' FOR UPDATE"
     );
     $stmt->execute([$sessionId]);
     $session = $stmt->fetch();
@@ -42,6 +44,12 @@ try {
     if (!$session) {
         $pdo->rollBack();
         echo json_encode(['status' => 'error', 'message' => 'Invalid session selected.']);
+        exit;
+    }
+
+    if ((int)$session['online_booking_enabled'] === 0) {
+        $pdo->rollBack();
+        echo json_encode(['status' => 'error', 'message' => 'Online booking is currently disabled for this medical center. Please use the Walk-in Kiosk.']);
         exit;
     }
 
