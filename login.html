@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | MedConnect</title>
+    <title>Patient Login | MedConnect</title>
+    <meta name="description" content="Log in to your MedConnect patient account to view and manage your appointments.">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
     <nav class="navbar">
         <a href="index.html" class="navbar-brand"><i class="fa-solid fa-heart-pulse"></i> MedConnect</a>
     </nav>
@@ -16,37 +16,11 @@
     <div class="login-wrapper">
         <div class="login-box">
             <div class="login-header">
-                <h2>Welcome Back</h2>
-                <p>Please log in to your account</p>
-            </div>
-            
-            <div class="login-tabs">
-                <button class="tab-btn active" data-role="patient" onclick="switchTab('patient')">Patient</button>
-                <button class="tab-btn" data-role="medical_staff" onclick="switchTab('medical_staff')">Medical Staff</button>
-                <button class="tab-btn" data-role="admin" onclick="switchTab('admin')">Admin</button>
+                <h2><i class="fa-solid fa-user" style="color: var(--primary);"></i> Patient Portal</h2>
+                <p>Log in to view and manage your appointments</p>
             </div>
 
-            <!-- Login Form for Staff and Admin -->
-            <form class="login-form" id="staffLoginForm" style="display: none;" onsubmit="handleLogin(event)">
-                <input type="hidden" id="staff_role" name="role" value="medical_staff">
-                <div id="staff-alert-box" class="alert"></div>
-
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" class="form-control" required placeholder="Enter your email">
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" class="form-control" required placeholder="Enter your password">
-                </div>
-
-                <button type="submit" class="btn-primary" id="staff-submit-btn" style="width: 100%; margin-top: 0.5rem;">
-                    Log in
-                </button>
-            </form>
-
-            <!-- Login Form for Patient -->
+            <!-- Patient Login Form -->
             <form class="login-form" id="patientLoginForm" onsubmit="handlePatientLogin(event)">
                 <input type="hidden" name="role" value="patient">
                 <div id="patient-alert-box" class="alert"></div>
@@ -65,7 +39,7 @@
                 </div>
 
                 <button type="submit" class="btn-primary" id="patient-submit-btn" style="width: 100%; margin-top: 0.5rem;">
-                    Log in as Patient
+                    <i class="fa-solid fa-right-to-bracket"></i> Log In
                 </button>
 
                 <div class="login-footer" id="register-link">
@@ -73,10 +47,10 @@
                 </div>
             </form>
 
-            <!-- Registration Form for Patient -->
+            <!-- Patient Registration Form -->
             <form class="login-form" id="registerForm" style="display: none;" onsubmit="handlePatientRegister(event)">
                 <div id="reg-alert-box" class="alert"></div>
-                
+
                 <div class="form-group">
                     <label>Full Name</label>
                     <input type="text" name="full_name" class="form-control" required placeholder="Enter your full name">
@@ -91,7 +65,7 @@
                 </div>
 
                 <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%; margin-top: 0.5rem;">
-                    Create Account
+                    <i class="fa-solid fa-user-plus"></i> Create Account
                 </button>
 
                 <div class="login-footer">
@@ -101,6 +75,101 @@
         </div>
     </div>
 
-    <script src="js/login.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirect = urlParams.get('redirect');
+            if (redirect) {
+                const note = document.createElement('p');
+                note.style.cssText = 'text-align:center;color:var(--text-muted);font-size:0.9rem;margin:0 2rem 1rem;';
+                note.textContent = 'Please log in to continue.';
+                const box = document.querySelector('.login-box');
+                if (box) box.insertBefore(note, box.querySelector('.login-form'));
+            }
+        });
+
+        function toggleRegister(show) {
+            document.getElementById('patientLoginForm').style.display = show ? 'none' : 'flex';
+            document.getElementById('registerForm').style.display = show ? 'flex' : 'none';
+            document.querySelectorAll('.alert').forEach(a => a.style.display = 'none');
+        }
+
+        function handlePatientLogin(event) {
+            event.preventDefault();
+            const form = document.getElementById('patientLoginForm');
+            const formData = new FormData(form);
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirect = urlParams.get('redirect');
+            if (redirect) formData.append('redirect', redirect);
+            const center = urlParams.get('center');
+            if (center) formData.append('center', center);
+            formData.append('portal', 'patient');
+
+            const alertBox = document.getElementById('patient-alert-box');
+            const submitBtn = document.getElementById('patient-submit-btn');
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
+            submitBtn.disabled = true;
+
+            fetch('api/login.php', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alertBox.className = 'alert success';
+                    alertBox.innerText = 'Login successful! Redirecting...';
+                    alertBox.style.display = 'block';
+                    setTimeout(() => { window.location.href = data.redirect; }, 900);
+                } else {
+                    alertBox.className = 'alert error';
+                    alertBox.innerText = data.message || 'Login failed.';
+                    alertBox.style.display = 'block';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Log In';
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(() => {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'A network error occurred.';
+                alertBox.style.display = 'block';
+                submitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Log In';
+                submitBtn.disabled = false;
+            });
+        }
+
+        function handlePatientRegister(event) {
+            event.preventDefault();
+            const form = document.getElementById('registerForm');
+            const formData = new FormData(form);
+            const alertBox = document.getElementById('reg-alert-box');
+            const submitBtn = document.getElementById('reg-submit-btn');
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
+            submitBtn.disabled = true;
+
+            fetch('api/register.php', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alertBox.className = 'alert success';
+                    alertBox.innerText = data.message;
+                    alertBox.style.display = 'block';
+                    form.reset();
+                    setTimeout(() => { window.location.href = data.redirect || 'dashboard_patient.php'; }, 1500);
+                } else {
+                    alertBox.className = 'alert error';
+                    alertText = data.message || 'Registration failed.';
+                    alertBox.innerText = alertText;
+                    alertBox.style.display = 'block';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Create Account';
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(() => {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'A network error occurred.';
+                alertBox.style.display = 'block';
+                submitBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Create Account';
+                submitBtn.disabled = false;
+            });
+        }
+    </script>
 </body>
 </html>

@@ -7,6 +7,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $role = $_POST['role'] ?? 'patient';
+$portal = $_POST['portal'] ?? 'patient';
+
+if ($role !== $portal && !($role === 'medical_staff' && $portal === 'staff')) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid login portal for this role.']);
+    exit;
+}
 
 if ($role === 'patient') {
     // Patient login uses Full Name, Phone, and Age

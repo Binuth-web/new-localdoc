@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | MedConnect</title>
+    <meta name="description" content="Log in to the MedConnect Platform Admin portal.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="navbar-brand"><i class="fa-solid fa-heart-pulse"></i> MedConnect</a>
+    </nav>
+
+    <div class="login-wrapper">
+        <div class="login-box">
+            <div class="login-header">
+                <h2><i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Admin Portal</h2>
+                <p>Platform Administrator Access</p>
+            </div>
+
+            <form class="login-form" id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+                <input type="hidden" name="role" value="admin">
+                <input type="hidden" name="portal" value="admin">
+                <div id="admin-alert-box" class="alert"></div>
+
+                <div class="form-group">
+                    <label for="email">Admin Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" required placeholder="Enter admin email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Admin Password</label>
+                    <input type="password" id="password" name="password" class="form-control" required placeholder="Enter password">
+                </div>
+
+                <button type="submit" class="btn-primary" id="admin-submit-btn" style="width: 100%; margin-top: 0.5rem; background-color: #0f4c81;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Secure Log In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const form = document.getElementById('adminLoginForm');
+            const formData = new FormData(form);
+            const alertBox = document.getElementById('admin-alert-box');
+            const submitBtn = document.getElementById('admin-submit-btn');
+
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
+            submitBtn.disabled = true;
+
+            fetch('api/login.php', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alertBox.className = 'alert success';
+                    alertBox.innerText = 'Login successful! Redirecting to Dashboard...';
+                    alertBox.style.display = 'block';
+                    setTimeout(() => { window.location.href = data.redirect; }, 1000);
+                } else {
+                    alertBox.className = 'alert error';
+                    alertBox.innerText = data.message || 'Login failed.';
+                    alertBox.style.display = 'block';
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'A network error occurred.';
+                alertBox.style.display = 'block';
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>

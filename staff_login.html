@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login | MedConnect</title>
+    <meta name="description" content="Log in to the MedConnect Medical Staff portal.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="navbar-brand"><i class="fa-solid fa-heart-pulse"></i> MedConnect</a>
+    </nav>
+
+    <div class="login-wrapper">
+        <div class="login-box">
+            <div class="login-header">
+                <h2><i class="fa-solid fa-user-doctor" style="color: var(--primary);"></i> Staff Portal</h2>
+                <p>Log in to manage clinic sessions and queues</p>
+            </div>
+
+            <form class="login-form" id="staffLoginForm" onsubmit="handleStaffLogin(event)">
+                <input type="hidden" name="role" value="medical_staff">
+                <input type="hidden" name="portal" value="staff">
+                <div id="staff-alert-box" class="alert"></div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" required placeholder="Enter your email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" required placeholder="Enter your password">
+                </div>
+
+                <button type="submit" class="btn-primary" id="staff-submit-btn" style="width: 100%; margin-top: 0.5rem;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Log in as Staff
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function handleStaffLogin(event) {
+            event.preventDefault();
+            const form = document.getElementById('staffLoginForm');
+            const formData = new FormData(form);
+            const alertBox = document.getElementById('staff-alert-box');
+            const submitBtn = document.getElementById('staff-submit-btn');
+
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
+            submitBtn.disabled = true;
+
+            fetch('api/login.php', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alertBox.className = 'alert success';
+                    alertBox.innerText = 'Login successful! Redirecting...';
+                    alertBox.style.display = 'block';
+                    setTimeout(() => { window.location.href = data.redirect; }, 1000);
+                } else {
+                    alertBox.className = 'alert error';
+                    alertBox.innerText = data.message || 'Login failed.';
+                    alertBox.style.display = 'block';
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'A network error occurred.';
+                alertBox.style.display = 'block';
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
