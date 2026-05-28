@@ -1,0 +1,61 @@
+<?php
+require 'db_connect.php';
+header('Content-Type: application/json');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { exit; }
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized.']);
+    exit;
+}
+
+$tokenId = filter_input(INPUT_POST, 'token_id', FILTER_VALIDATE_INT);
+if (!$tokenId) {
+    echo json_encode(['status' => 'error', 'message' => 'token_id required.']);
+    exit;
+}
+
+// Verify token belongs to this patient and is in no-show status
+$stmt = $pdo->prepare("
+    SELECT ot.*, os.is_active, os.end_time, os.session_date, os.clinic_id,
+           mc.name AS center_name
+    FROM opd_tokens ot 
+    JOIN opd_sessions os ON ot.session_id = os.id
+    JOIN medical_centers mc ON os.clinic_id = mc.id
+    WHERE ot.id = ? AND ot.patient_id = ?
+");
+$stmt->execute([$tokenId, $_SESSION['user_id']]);
+$token = $stmt->fetch();
+
+if (!$token) {
+    echo json_encode(['status' => 'error', 'message' => 'Token not found.']);
+    exit;
+}
+
+if ($token['status'] !== 'no-show') {
+    echo json_encode(['status' => 'error', 'message' => 'Late token can only be requested when marked absent.']);
+    exit;
+}
+
+if (!$token['is_active']) {
+    echo json_encode(['status' => 'error', 'message' => 'The session has already ended.']);
+    exit;
+}
+
+// Change status to late_request
+$pdo->prepare("UPDATE opd_tokens SET status = 'late_request' WHERE id = ?")->execute([$tokenId]);
+
+// Notify all staff of this center about the late request
+$staffStmt = $pdo->prepare("SELECT id FROM users WHERE role = 'staff' AND center_id = ? AND is_active = 1");
+$staffStmt->execute([$token['clinic_id']]);
+$staffMembers = $staffStmt->fetchAll();
+
+$patientName = $_SESSION['name'] ?? 'Patient';
+$message = "🕐 Late Token Request: {$patientName} (token {$token['token_number']}) was marked absent but is requesting a late token for {$token['center_name']}. Please check with the doctor and approve/deny in the session view.";
+
+foreach ($staffMembers as $staff) {
+    $pdo->prepare("INSERT INTO notifications (user_id, token_id, message, type) VALUES (?, ?, ?, 'action')")
+        ->execute([$staff['id'], $tokenId, $message]);
+}
+
+echo json_encode(['status' => 'success', 'message' => 'Your late token request has been sent to the medical staff. Please wait for their response.']);
+?>

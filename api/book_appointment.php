@@ -76,9 +76,16 @@ try {
 
     $pdo->commit();
 
+    // ⚠️ Attendance warning notification for the patient
+    $lastTokenId = (int)$pdo->lastInsertId();
+    $sessionDate = $session['session_date'];
+    $warningMsg  = "⚠️ Booking Confirmed — Token {$tokenNumber} on {$sessionDate}.\n\nIMPORTANT: You must be physically present at the medical center before your session time. Medical staff will mark your attendance. If you are not marked present, your token will be set to ABSENT and your slot given up. If you are running late, you can request a Late Token from your dashboard.";
+    $pdo->prepare("INSERT INTO notifications (user_id, token_id, message, type) VALUES (?, ?, ?, 'warning')")
+        ->execute([$_SESSION['user_id'], $lastTokenId, $warningMsg]);
+
     echo json_encode([
         'status' => 'success',
-        'message' => "Booked successfully! Your token is {$tokenNumber}.",
+        'message' => "Booked successfully! Your token is {$tokenNumber}. Check your dashboard for important attendance info.",
         'redirect' => 'dashboard_patient.php',
     ]);
 } catch (PDOException $e) {
