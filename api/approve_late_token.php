@@ -3,12 +3,14 @@ require 'db_connect.php';
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { exit; }
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'medical_staff') {
+
+$role = $_SESSION['role'] ?? '';
+if (!isset($_SESSION['user_id']) || !in_array($role, ['staff', 'medical_staff'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized.']);
     exit;
 }
 
-$tokenId = filter_input(INPUT_POST, 'token_id', FILTER_VALIDATE_INT);
+$tokenId = (int)($_POST['token_id'] ?? 0);
 if (!$tokenId) {
     echo json_encode(['status' => 'error', 'message' => 'token_id required.']);
     exit;

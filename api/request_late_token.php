@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
     exit;
 }
 
-$tokenId = filter_input(INPUT_POST, 'token_id', FILTER_VALIDATE_INT);
+$tokenId = (int)($_POST['token_id'] ?? 0);
 if (!$tokenId) {
     echo json_encode(['status' => 'error', 'message' => 'token_id required.']);
     exit;
@@ -31,8 +31,8 @@ if (!$token) {
     exit;
 }
 
-if ($token['status'] !== 'no-show') {
-    echo json_encode(['status' => 'error', 'message' => 'Late token can only be requested when marked absent.']);
+if (!in_array($token['status'], ['waiting', 'no-show'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Late token can only be requested when pending or marked absent.']);
     exit;
 }
 
@@ -44,13 +44,14 @@ if (!$token['is_active']) {
 // Change status to late_request
 $pdo->prepare("UPDATE opd_tokens SET status = 'late_request' WHERE id = ?")->execute([$tokenId]);
 
-// Notify all staff of this center about the late request
+// Notify all staff of this center — DB role enum value is 'staff'
 $staffStmt = $pdo->prepare("SELECT id FROM users WHERE role = 'staff' AND center_id = ? AND is_active = 1");
 $staffStmt->execute([$token['clinic_id']]);
 $staffMembers = $staffStmt->fetchAll();
 
 $patientName = $_SESSION['name'] ?? 'Patient';
-$message = "🕐 Late Token Request: {$patientName} (token {$token['token_number']}) was marked absent but is requesting a late token for {$token['center_name']}. Please check with the doctor and approve/deny in the session view.";
+$statusDesc = ($token['status'] === 'no-show') ? 'was marked absent but is' : 'is currently pending and';
+$message = "🕐 Late Token Request: {$patientName} (token {$token['token_number']}) {$statusDesc} requesting a late token for {$token['center_name']}. Please check with the doctor and approve in the session view.";
 
 foreach ($staffMembers as $staff) {
     $pdo->prepare("INSERT INTO notifications (user_id, token_id, message, type) VALUES (?, ?, ?, 'action')")

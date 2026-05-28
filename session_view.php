@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'medical_staff') {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['staff', 'medical_staff'])) {
     header('Location: login.html?role=medical_staff');
     exit;
 }
@@ -171,6 +171,7 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
             </div>
         </div>
         <div style="display:flex;gap:0.75rem;align-items:center;">
+            <a href="kiosk.php?session_id=<?php echo $sessionId; ?>" target="_blank" class="back-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5);"><i class="fa-solid fa-tablet-screen-button"></i> Open Kiosk</a>
             <button class="refresh-btn" onclick="loadTokens()"><i class="fa-solid fa-rotate"></i> Refresh</button>
             <a href="dashboard_staff.php" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>

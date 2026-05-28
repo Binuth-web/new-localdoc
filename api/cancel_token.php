@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
     exit;
 }
 
-$tokenId = filter_input(INPUT_POST, 'token_id', FILTER_VALIDATE_INT);
+$tokenId = (int)($_POST['token_id'] ?? 0);
 if (!$tokenId) {
     echo json_encode(['status' => 'error', 'message' => 'token_id required.']);
     exit;

@@ -141,16 +141,14 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
                 <div class="notif-msg">
                     <?php echo nl2br(htmlspecialchars($n['message'])); ?>
                     <?php
-                    // Show request late token button if action type and relates to a no-show token
+                    // Show request late token button for any action notification with a token_id
                     if ($n['type'] === 'action' && $n['token_id']):
-                        $actionData = json_decode($n['action_data'] ?? '{}', true);
-                        if (isset($actionData['token_id'])):
                     ?>
                         <br>
                         <button class="btn-late-req" onclick="requestLate(<?php echo (int)$n['token_id']; ?>, <?php echo (int)$n['id']; ?>)">
                             <i class="fa-solid fa-clock"></i> Request Late Token
                         </button>
-                    <?php endif; endif; ?>
+                    <?php endif; ?>
                 </div>
                 <div class="notif-time"><?php echo date('d M, H:i', strtotime($n['created_at'])); ?></div>
             </div>
@@ -169,7 +167,7 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
                         [$label, $color, $bg] = getDisplayStatus($apt['status'], (int)$apt['attendance_marked']);
                         $tokenNum = str_replace('OPD-', '', $apt['token_number'] ?? '');
                         $canCancel = in_array($apt['status'], ['waiting']) && !$apt['attendance_marked'];
-                        $canLateReq = $apt['status'] === 'no-show' && $apt['session_active'];
+                        $canLateReq = in_array($apt['status'], ['waiting', 'no-show']) && !$apt['attendance_marked'] && $apt['session_active'];
                     ?>
                         <div class="apt-card">
                             <div style="flex:1;">
