@@ -6,39 +6,60 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$firstName = trim((string) ($_POST['first_name'] ?? ''));
-$lastName = trim((string) ($_POST['last_name'] ?? ''));
-$email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+$fullName = trim((string) ($_POST['full_name'] ?? ''));
 $phone = trim((string) ($_POST['phone'] ?? ''));
-$password = $_POST['password'] ?? '';
-// Generate a random password if none provided (for patients without password)
-if (empty($password)) {
-    $password = bin2hex(random_bytes(4)); // 8-character random password
-}
+$age = filter_input(INPUT_POST, 'age', FILTER_VALIDATE_INT);
 $centerId = filter_input(INPUT_POST, 'center_id', FILTER_VALIDATE_INT) ?: null;
 
-if (!$firstName || !$lastName || !$email) {
-    echo json_encode(['status' => 'error', 'message' => 'Name and email are required.']);
+if (!$fullName || !$phone || $age === false) {
+    echo json_encode(['status' => 'error', 'message' => 'Full Name, Contact Number, and Age are required.']);
     exit;
 }
 
-$fullName = trim($firstName . ' ' . $lastName);
-$passwordHash = password_hash($password, PASSWORD_DEFAULT);
+// Generate dummy email and password since patient accounts no longer use them
+$email = preg_replace('/[^0-9]/', '', $phone) . '_' . time() . '@medconnect.local';
+$passwordHash = password_hash('NOPASSWORD', PASSWORD_DEFAULT);
 
 try {
+    // Check if patient already exists by phone and name
+    $existingStmt = $pdo->prepare('SELECT id, full_name, center_id FROM users WHERE phone = ? AND full_name = ? AND role = "patient"');
+    $existingStmt->execute([$phone, $fullName]);
+    $existingUser = $existingStmt->fetch();
+
+    if ($existingUser) {
+        // Just log them in if they re-register with exact same info
+        $_SESSION['user_id'] = (int) $existingUser['id'];
+        $_SESSION['role'] = 'patient';
+        $_SESSION['name'] = $existingUser['full_name'];
+        if (!empty($existingUser['center_id'])) {
+            $_SESSION['center_id'] = (int) $existingUser['center_id'];
+        }
+        $redirect = 'index.html';
+        if ($centerId) {
+            $redirect .= '?book_center=' . $centerId;
+        }
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Logged in with existing account.',
+            'redirect' => $redirect,
+        ]);
+        exit;
+    }
+
     // Insert new patient
     $stmt = $pdo->prepare(
-        'INSERT INTO users (full_name, email, phone, hashed_password, role, is_active, is_verified, center_id) 
-         VALUES (?, ?, ?, ?, ?, 1, 1, ?)'
+        'INSERT INTO users (full_name, email, phone, age, hashed_password, role, is_active, is_verified, center_id) 
+         VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?)'
     );
-    $stmt->execute([$fullName, $email, $phone ?: null, $passwordHash, 'patient', $centerId]);
+    $stmt->execute([$fullName, $email, $phone, $age, $passwordHash, 'patient', $centerId]);
 
     $_SESSION['user_id'] = (int) $pdo->lastInsertId();
     $_SESSION['role'] = 'patient';
-    $_SESSION['name'] = $firstName;
+    $_SESSION['name'] = $fullName;
     if ($centerId) {
         $_SESSION['center_id'] = (int) $centerId;
     }
+    
     $redirect = 'index.html';
     if ($centerId) {
         $redirect .= '?book_center=' . $centerId;
@@ -50,30 +71,6 @@ try {
         'redirect' => $redirect,
     ]);
 } catch (PDOException $e) {
-    if ((int) $e->getCode() === 23000) {
-        // Duplicate email: fetch existing user and log them in
-        $existingStmt = $pdo->prepare('SELECT id, full_name, center_id FROM users WHERE email = ?');
-        $existingStmt->execute([$email]);
-        $existingUser = $existingStmt->fetch();
-        if ($existingUser) {
-            $_SESSION['user_id'] = (int) $existingUser['id'];
-            $_SESSION['role'] = 'patient';
-            $_SESSION['name'] = explode(' ', $existingUser['full_name'])[0];
-            if (!empty($existingUser['center_id'])) {
-                $_SESSION['center_id'] = (int) $existingUser['center_id'];
-            }
-            $redirect = 'index.html';
-            if ($centerId) {
-                $redirect .= '?book_center=' . $centerId;
-            }
-            echo json_encode([
-                'status' => 'success',
-                'message' => 'Logged in with existing account.',
-                'redirect' => $redirect,
-            ]);
-            exit;
-        }
-    }
-    echo json_encode(['status' => 'error', 'message' => 'Registration failed. Please try again.']);
+    echo json_encode(['status' => 'error', 'message' => 'Registration failed. Please try again. Error: ' . $e->getMessage()]);
 }
 ?>

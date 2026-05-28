@@ -16,7 +16,7 @@ if (!$tokenId) {
 
 // Verify token belongs to this patient and is in no-show status
 $stmt = $pdo->prepare("
-    SELECT ot.*, os.is_active, os.end_time, os.session_date, os.clinic_id,
+    SELECT ot.*, os.status AS session_status, os.end_time, os.session_date, os.clinic_id,
            mc.name AS center_name
     FROM opd_tokens ot 
     JOIN opd_sessions os ON ot.session_id = os.id
@@ -36,8 +36,8 @@ if (!in_array($token['status'], ['waiting', 'no-show'])) {
     exit;
 }
 
-if (!$token['is_active']) {
-    echo json_encode(['status' => 'error', 'message' => 'The session has already ended.']);
+if ($token['session_status'] !== 'active') {
+    echo json_encode(['status' => 'error', 'message' => 'This session is no longer active.']);
     exit;
 }
 

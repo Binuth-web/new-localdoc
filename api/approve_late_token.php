@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { exit; }
 
 $role = $_SESSION['role'] ?? '';
-if (!isset($_SESSION['user_id']) || !in_array($role, ['staff', 'medical_staff'])) {
+if (!isset($_SESSION['user_id']) || !in_array($role, ['staff', 'medical_staff', 'admin', 'doctor'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized.']);
     exit;
 }

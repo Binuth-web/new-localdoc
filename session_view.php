@@ -1,7 +1,7 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['staff', 'medical_staff'])) {
-    header('Location: login.html?role=medical_staff');
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['staff', 'medical_staff', 'admin', 'doctor'])) {
+    header('Location: login.html');
     exit;
 }
 require 'api/db_connect.php';
@@ -171,7 +171,7 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
             </div>
         </div>
         <div style="display:flex;gap:0.75rem;align-items:center;">
-            <a href="kiosk.php?session_id=<?php echo $sessionId; ?>" target="_blank" class="back-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5);"><i class="fa-solid fa-tablet-screen-button"></i> Open Kiosk</a>
+            <a href="kiosk.php?session_id=<?php echo $sessionId; ?>" target="_blank" class="back-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5);"><i class="fa-solid fa-users"></i> On Site Patients</a>
             <button class="refresh-btn" onclick="loadTokens()"><i class="fa-solid fa-rotate"></i> Refresh</button>
             <a href="dashboard_staff.php" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
@@ -261,6 +261,13 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
                     <div class="token-actions">
                         <button class="btn-mark btn-present" onclick="markAttendance(${slot.token_id}, 'present')">✓ Present</button>
                         <button class="btn-mark btn-absent"  onclick="markAttendance(${slot.token_id}, 'absent')">✗ Absent</button>
+                        <button class="btn-mark btn-approve" onclick="markAttendance(${slot.token_id}, 'complete')" style="flex: 100%; margin-top: 4px;">✓ Complete</button>
+                    </div>`;
+            } else if (slot.status === 'present' && slot.token_id) {
+                actionsHtml = `
+                    <div class="token-actions">
+                        <button class="btn-mark btn-absent"  onclick="markAttendance(${slot.token_id}, 'absent')">✗ Absent</button>
+                        <button class="btn-mark btn-approve" onclick="markAttendance(${slot.token_id}, 'complete')" style="flex: 100%; margin-top: 4px;">✓ Complete</button>
                     </div>`;
             } else if (slot.status === 'late_request' && slot.token_id) {
                 actionsHtml = `

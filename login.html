@@ -26,10 +26,10 @@
                 <button class="tab-btn" data-role="admin" onclick="switchTab('admin')">Admin</button>
             </div>
 
-            <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
-                <input type="hidden" id="role" name="role" value="patient">
-                
-                <div id="alert-box" class="alert"></div>
+            <!-- Login Form for Staff and Admin -->
+            <form class="login-form" id="staffLoginForm" style="display: none;" onsubmit="handleLogin(event)">
+                <input type="hidden" id="staff_role" name="role" value="medical_staff">
+                <div id="staff-alert-box" class="alert"></div>
 
                 <div class="form-group">
                     <label for="email">Email Address</label>
@@ -41,7 +41,30 @@
                     <input type="password" id="password" name="password" class="form-control" required placeholder="Enter your password">
                 </div>
 
-                <button type="submit" class="btn-primary" id="submit-btn" style="width: 100%; margin-top: 0.5rem;">
+                <button type="submit" class="btn-primary" id="staff-submit-btn" style="width: 100%; margin-top: 0.5rem;">
+                    Log in
+                </button>
+            </form>
+
+            <!-- Login Form for Patient -->
+            <form class="login-form" id="patientLoginForm" onsubmit="handlePatientLogin(event)">
+                <input type="hidden" name="role" value="patient">
+                <div id="patient-alert-box" class="alert"></div>
+
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" class="form-control" required placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label>Contact Number</label>
+                    <input type="tel" name="phone" class="form-control" required placeholder="Enter your phone number">
+                </div>
+                <div class="form-group">
+                    <label>Age</label>
+                    <input type="number" name="age" class="form-control" required min="0" max="150" placeholder="Enter your age">
+                </div>
+
+                <button type="submit" class="btn-primary" id="patient-submit-btn" style="width: 100%; margin-top: 0.5rem;">
                     Log in as Patient
                 </button>
 
@@ -50,29 +73,21 @@
                 </div>
             </form>
 
-            <form class="login-form" id="registerForm" style="display: none;" onsubmit="handleRegister(event)">
+            <!-- Registration Form for Patient -->
+            <form class="login-form" id="registerForm" style="display: none;" onsubmit="handlePatientRegister(event)">
                 <div id="reg-alert-box" class="alert"></div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="form-group">
-                        <label>First Name</label>
-                        <input type="text" name="first_name" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Last Name</label>
-                        <input type="text" name="last_name" class="form-control" required>
-                    </div>
+                
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" class="form-control" required placeholder="Enter your full name">
                 </div>
                 <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" name="email" class="form-control" required>
+                    <label>Contact Number</label>
+                    <input type="tel" name="phone" class="form-control" required placeholder="Enter your phone number">
                 </div>
                 <div class="form-group">
-                    <label>Phone Number</label>
-                    <input type="text" name="phone" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" name="password" class="form-control" required>
+                    <label>Age</label>
+                    <input type="number" name="age" class="form-control" required min="0" max="150" placeholder="Enter your age">
                 </div>
 
                 <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%; margin-top: 0.5rem;">

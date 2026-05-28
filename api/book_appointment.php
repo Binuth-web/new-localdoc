@@ -34,7 +34,7 @@ try {
 
     $stmt = $pdo->prepare(
         'SELECT id, clinic_id, current_token, max_tokens, session_date, start_time
-         FROM opd_sessions WHERE id = ? AND is_active = 1 FOR UPDATE'
+         FROM opd_sessions WHERE id = ? AND status = 'active' FOR UPDATE'
     );
     $stmt->execute([$sessionId]);
     $session = $stmt->fetch();

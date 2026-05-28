@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const roleParam = urlParams.get('role');
     if (roleParam && ['patient', 'medical_staff', 'admin'].includes(roleParam)) {
         switchTab(roleParam);
+    } else {
+        switchTab('patient'); // Default
     }
 
     const redirect = urlParams.get('redirect');
@@ -17,9 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function switchTab(role) {
-    // Update hidden input
-    document.getElementById('role').value = role;
-    
     // Update active tab styling
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -28,56 +27,57 @@ function switchTab(role) {
         }
     });
 
-    // Update button text
-    const btnText = role === 'medical_staff' ? 'Medical Staff' : role.charAt(0).toUpperCase() + role.slice(1);
-    document.getElementById('submit-btn').innerText = `Log in as ${btnText}`;
-
-    // Show/hide register link
-    const registerLink = document.getElementById('register-link');
-    if (role === 'patient') {
-        registerLink.innerHTML = `Don't have an account? <a href="#" onclick="toggleRegister(true); return false;">Register here</a>`;
-        registerLink.style.display = 'block';
-    } else if (role === 'medical_staff') {
-        registerLink.innerHTML = `Medical staff? <a href="register_staff.html">Register here</a> (requires admin approval)`;
-        registerLink.style.display = 'block';
-    } else {
-        registerLink.style.display = 'none';
-    }
+    const staffForm = document.getElementById('staffLoginForm');
+    const patientForm = document.getElementById('patientLoginForm');
+    const registerForm = document.getElementById('registerForm');
     
     // Clear alerts
-    document.getElementById('alert-box').style.display = 'none';
+    document.querySelectorAll('.alert').forEach(a => a.style.display = 'none');
+
+    registerForm.style.display = 'none';
+
+    if (role === 'patient') {
+        staffForm.style.display = 'none';
+        patientForm.style.display = 'flex';
+    } else {
+        patientForm.style.display = 'none';
+        staffForm.style.display = 'flex';
+        document.getElementById('staff_role').value = role;
+        
+        const btnText = role === 'medical_staff' ? 'Medical Staff' : 'Admin';
+        document.getElementById('staff-submit-btn').innerText = `Log in as ${btnText}`;
+    }
+}
+
+function toggleRegister(showRegister) {
+    document.getElementById('patientLoginForm').style.display = showRegister ? 'none' : 'flex';
+    document.getElementById('registerForm').style.display = showRegister ? 'flex' : 'none';
+    document.getElementById('staffLoginForm').style.display = 'none';
+    document.querySelectorAll('.alert').forEach(a => a.style.display = 'none');
+    
+    // Hide tabs when registering
+    document.querySelector('.login-tabs').style.display = showRegister ? 'none' : 'flex';
 }
 
 function handleLogin(event) {
     event.preventDefault();
-    const form = document.getElementById('loginForm');
+    const form = document.getElementById('staffLoginForm');
     const formData = new FormData(form);
-    const urlParams = new URLSearchParams(window.location.search);
-    const redirect = urlParams.get('redirect');
-    if (redirect && formData.get('role') === 'patient') {
-        formData.append('redirect', redirect);
-    }
-    const alertBox = document.getElementById('alert-box');
-    const submitBtn = document.getElementById('submit-btn');
+    const alertBox = document.getElementById('staff-alert-box');
+    const submitBtn = document.getElementById('staff-submit-btn');
 
-    // Basic UI loading state
     const originalBtnText = submitBtn.innerText;
     submitBtn.innerText = 'Logging in...';
     submitBtn.disabled = true;
 
-    fetch('api/login.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
+    fetch('api/login.php', { method: 'POST', body: formData })
+    .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
             alertBox.className = 'alert success';
             alertBox.innerText = 'Login successful! Redirecting...';
             alertBox.style.display = 'block';
-            setTimeout(() => {
-                window.location.href = data.redirect;
-            }, 1000);
+            setTimeout(() => { window.location.href = data.redirect; }, 1000);
         } else {
             alertBox.className = 'alert error';
             alertBox.innerText = data.message || 'Login failed.';
@@ -87,7 +87,6 @@ function handleLogin(event) {
         }
     })
     .catch(err => {
-        console.error(err);
         alertBox.className = 'alert error';
         alertBox.innerText = 'A network error occurred.';
         alertBox.style.display = 'block';
@@ -96,17 +95,52 @@ function handleLogin(event) {
     });
 }
 
-function toggleRegister(showRegister) {
-    document.getElementById('loginForm').style.display = showRegister ? 'none' : 'flex';
-    document.getElementById('registerForm').style.display = showRegister ? 'flex' : 'none';
-    document.getElementById('alert-box').style.display = 'none';
-    document.getElementById('reg-alert-box').style.display = 'none';
+function handlePatientLogin(event) {
+    event.preventDefault();
+    const form = document.getElementById('patientLoginForm');
+    const formData = new FormData(form);
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect');
+    if (redirect) {
+        formData.append('redirect', redirect);
+    }
+    const center = urlParams.get('center');
+    if (center) {
+        formData.append('center', center);
+    }
     
-    // Hide tabs when registering
-    document.querySelector('.login-tabs').style.display = showRegister ? 'none' : 'flex';
+    const alertBox = document.getElementById('patient-alert-box');
+    const submitBtn = document.getElementById('patient-submit-btn');
+
+    submitBtn.innerText = 'Logging in...';
+    submitBtn.disabled = true;
+
+    fetch('api/login.php', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alertBox.className = 'alert success';
+            alertBox.innerText = 'Login successful! Redirecting...';
+            alertBox.style.display = 'block';
+            setTimeout(() => { window.location.href = data.redirect; }, 1000);
+        } else {
+            alertBox.className = 'alert error';
+            alertBox.innerText = data.message || 'Login failed.';
+            alertBox.style.display = 'block';
+            submitBtn.innerText = 'Log in as Patient';
+            submitBtn.disabled = false;
+        }
+    })
+    .catch(err => {
+        alertBox.className = 'alert error';
+        alertBox.innerText = 'A network error occurred.';
+        alertBox.style.display = 'block';
+        submitBtn.innerText = 'Log in as Patient';
+        submitBtn.disabled = false;
+    });
 }
 
-function handleRegister(event) {
+function handlePatientRegister(event) {
     event.preventDefault();
     const form = document.getElementById('registerForm');
     const formData = new FormData(form);
@@ -116,25 +150,28 @@ function handleRegister(event) {
     submitBtn.innerText = 'Registering...';
     submitBtn.disabled = true;
 
-    fetch('api/register.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
+    fetch('api/register.php', { method: 'POST', body: formData })
+    .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
             alertBox.className = 'alert success';
             alertBox.innerText = data.message;
             alertBox.style.display = 'block';
             form.reset();
-            setTimeout(() => { toggleRegister(false); }, 2000);
+            setTimeout(() => { 
+                if (data.redirect && data.redirect !== 'index.html') {
+                    window.location.href = data.redirect;
+                } else {
+                    window.location.href = 'dashboard_patient.php';
+                }
+            }, 1500);
         } else {
             alertBox.className = 'alert error';
             alertBox.innerText = data.message || 'Registration failed.';
             alertBox.style.display = 'block';
+            submitBtn.innerText = 'Create Account';
+            submitBtn.disabled = false;
         }
-        submitBtn.innerText = 'Create Account';
-        submitBtn.disabled = false;
     })
     .catch(err => {
         alertBox.className = 'alert error';

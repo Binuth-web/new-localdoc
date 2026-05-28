@@ -22,7 +22,7 @@ if (hasOpdTables($pdo)) {
                    os.end_time
             FROM opd_sessions os
             WHERE os.clinic_id = ?
-              AND os.is_active = 1
+              AND os.status = 'active'
               AND os.session_date >= CURDATE()
               AND os.current_token < os.max_tokens
             ORDER BY os.session_date, os.start_time";

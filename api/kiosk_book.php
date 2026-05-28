@@ -16,7 +16,7 @@ if (!$sessionId || !$name) {
 $pdo->beginTransaction();
 try {
     // Lock session row (FOR UPDATE must be inside a transaction)
-    $stmt = $pdo->prepare("SELECT * FROM opd_sessions WHERE id = ? AND is_active = 1 FOR UPDATE");
+    $stmt = $pdo->prepare("SELECT * FROM opd_sessions WHERE id = ? AND status = 'active' FOR UPDATE");
     $stmt->execute([$sessionId]);
     $session = $stmt->fetch();
 

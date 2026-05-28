@@ -13,7 +13,7 @@ if (hasOpdTables($pdo)) {
         SELECT ot.id AS token_db_id, ot.status, ot.attendance_marked, ot.created_at, ot.token_number,
                os.id AS session_id, os.opd_name AS specialization,
                COALESCE(os.doctor_name, os.opd_name, 'OPD') AS doctor_first,
-               os.session_date AS date, os.start_time, os.end_time, os.is_active AS session_active,
+               os.session_date AS date, os.start_time, os.end_time, os.status AS session_status,
                mc.name AS center_name, mc.address
         FROM opd_tokens ot
         JOIN opd_sessions os ON ot.session_id = os.id
@@ -167,7 +167,7 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
                         [$label, $color, $bg] = getDisplayStatus($apt['status'], (int)$apt['attendance_marked']);
                         $tokenNum = str_replace('OPD-', '', $apt['token_number'] ?? '');
                         $canCancel = in_array($apt['status'], ['waiting']) && !$apt['attendance_marked'];
-                        $canLateReq = in_array($apt['status'], ['waiting', 'no-show']) && !$apt['attendance_marked'] && $apt['session_active'];
+                        $canLateReq = in_array($apt['status'], ['waiting', 'no-show']) && !$apt['attendance_marked'] && $apt['session_status'] === 'active';
                     ?>
                         <div class="apt-card">
                             <div style="flex:1;">

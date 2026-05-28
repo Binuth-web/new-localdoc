@@ -1,7 +1,7 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['staff', 'medical_staff'])) {
-    header('Location: login.html?role=medical_staff');
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['staff', 'medical_staff', 'admin', 'doctor'])) {
+    header('Location: login.html');
     exit;
 }
 require 'api/db_connect.php';
@@ -110,6 +110,41 @@ $notifications = $notifStmt->fetchAll();
             transition: background 0.2s;
         }
         .manage-btn:hover { background: #bfdbfe; }
+        .edit-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: #f0fdf4; color: #15803d;
+            padding: 0.3rem 0.75rem; border-radius: 6px;
+            font-size: 0.8rem; font-weight: 600; border: none; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .edit-btn:hover { background: #bbf7d0; }
+
+        /* Edit Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45); z-index: 1000;
+            justify-content: center; align-items: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: white; border-radius: 14px;
+            padding: 2rem; width: 100%; max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            animation: slideUp 0.25s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(30px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+        .modal-box h3 { margin: 0 0 1.25rem; color: var(--secondary); font-size: 1.1rem; }
+        .modal-box .form-row { display: flex; gap: 1rem; }
+        .modal-box .form-row .form-group { flex: 1; margin-bottom: 0.9rem; }
+        .modal-box .form-group { margin-bottom: 0.9rem; }
+        .modal-box label { font-size: 0.83rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.3rem; }
+        .modal-box .form-control { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 0.9rem; box-sizing: border-box; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 0.55rem 1.4rem; border-radius: 7px; font-weight: 600; cursor: pointer; }
+        .btn-save:hover { opacity: 0.9; }
+        .btn-cancel-modal { background: #f1f5f9; color: #475569; border: none; padding: 0.55rem 1.2rem; border-radius: 7px; font-weight: 600; cursor: pointer; }
+        .status-badge-blocked { display:inline-block; background:#fef3c7; color:#92400e; padding:2px 7px; border-radius:10px; font-size:0.72rem; font-weight:700; }
+        .status-badge-completed { display:inline-block; background:#dcfce7; color:#166534; padding:2px 7px; border-radius:10px; font-size:0.72rem; font-weight:700; }
     </style>
 </head>
 <body style="padding: 2rem; background: #f8fafc;">
@@ -209,9 +244,26 @@ $notifications = $notifStmt->fetchAll();
                                 <?php endif; ?>
                             </td>
                             <td>
+                                <?php if ($s['status'] === 'completed'): ?>
+                                    <span style="display:inline-block; background: #dcfce7; color: #166534; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.3rem;"><i class="fa-solid fa-check-circle"></i> Completed</span><br>
+                                <?php else: ?>
+                                    <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                                        <?php if ($s['status'] === 'active'): ?>
+                                            <button onclick="updateSessionStatus(<?php echo $s['id']; ?>, 'block')" style="background: #fee2e2; color: #991b1b; border: none; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-ban"></i> Block</button>
+                                        <?php elseif ($s['status'] === 'blocked'): ?>
+                                            <button onclick="updateSessionStatus(<?php echo $s['id']; ?>, 'resume')" style="background: #fef3c7; color: #92400e; border: none; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-play"></i> Resume</button>
+                                        <?php endif; ?>
+                                        <button onclick="updateSessionStatus(<?php echo $s['id']; ?>, 'complete')" style="background: #dcfce7; color: #166534; border: none; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-check"></i> Complete</button>
+                                    </div>
+                                <?php endif; ?>
                                 <a href="session_view.php?id=<?php echo $s['id']; ?>" class="manage-btn">
                                     <i class="fa-solid fa-clipboard-list"></i> Manage
                                 </a>
+                                <?php if ($s['status'] !== 'completed'): ?>
+                                <button class="edit-btn" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($s), ENT_QUOTES); ?>)">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                </button>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -224,12 +276,122 @@ $notifications = $notifStmt->fetchAll();
         </div>
     </div>
 
+    <!-- Edit Session Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <h3><i class="fa-solid fa-pen-to-square"></i> Edit Session</h3>
+            <input type="hidden" id="edit_session_id">
+            <div class="form-group">
+                <label>Medical Center</label>
+                <select id="edit_clinic_id" class="form-control">
+                    <?php foreach ($centers as $id => $name): ?>
+                        <option value="<?php echo $id; ?>"><?php echo htmlspecialchars($name); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Doctor Name</label>
+                <input type="text" id="edit_doctor_name" class="form-control" placeholder="e.g. Dr. Jane Smith">
+            </div>
+            <div class="form-group">
+                <label>Session Date</label>
+                <input type="date" id="edit_session_date" class="form-control">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Time</label>
+                    <input type="time" id="edit_start_time" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>End Time</label>
+                    <input type="time" id="edit_end_time" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Max Patients (Tokens)</label>
+                <input type="number" id="edit_max_tokens" class="form-control" min="1">
+            </div>
+            <div id="editModalMsg" style="font-size:0.85rem;margin-top:0.5rem;"></div>
+            <div class="modal-footer">
+                <button class="btn-cancel-modal" onclick="closeEditModal()">Cancel</button>
+                <button class="btn-save" onclick="saveSession()"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function dismissAllStaffNotifs() {
             const fd = new FormData();
             fetch('api/dismiss_notification.php', { method: 'POST', body: fd })
-                .then(() => document.getElementById('staffNotifStrip').remove());
+                .then(() => {
+                    const strip = document.getElementById('staffNotifStrip');
+                    if(strip) strip.remove();
+                });
         }
+
+        function updateSessionStatus(sessionId, action) {
+            const msg = action === 'complete' ? 'Are you sure you want to mark this session as COMPLETED?' :
+                        action === 'block' ? 'Are you sure you want to BLOCK this session from patients?' :
+                        'Are you sure you want to RESUME this session?';
+            if (!confirm(msg)) return;
+            const fd = new FormData();
+            fd.append('session_id', sessionId);
+            fd.append('action', action);
+            fetch('api/update_session_status.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') location.reload();
+                    else alert(data.message);
+                })
+                .catch(() => alert('Network error while updating session.'));
+        }
+
+        function openEditModal(session) {
+            document.getElementById('edit_session_id').value   = session.id;
+            document.getElementById('edit_clinic_id').value    = session.clinic_id;
+            document.getElementById('edit_doctor_name').value  = session.doctor_name || '';
+            document.getElementById('edit_session_date').value = session.session_date;
+            document.getElementById('edit_start_time').value   = session.start_time.substring(0,5);
+            document.getElementById('edit_end_time').value     = session.end_time.substring(0,5);
+            document.getElementById('edit_max_tokens').value   = session.max_tokens;
+            document.getElementById('editModalMsg').textContent = '';
+            document.getElementById('editModal').classList.add('open');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('open');
+        }
+
+        function saveSession() {
+            const msgEl = document.getElementById('editModalMsg');
+            msgEl.textContent = '';
+            const fd = new FormData();
+            fd.append('session_id',   document.getElementById('edit_session_id').value);
+            fd.append('clinic_id',    document.getElementById('edit_clinic_id').value);
+            fd.append('doctor_name',  document.getElementById('edit_doctor_name').value.trim());
+            fd.append('session_date', document.getElementById('edit_session_date').value);
+            fd.append('start_time',   document.getElementById('edit_start_time').value);
+            fd.append('end_time',     document.getElementById('edit_end_time').value);
+            fd.append('max_tokens',   document.getElementById('edit_max_tokens').value);
+
+            fetch('api/edit_session.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        closeEditModal();
+                        location.reload();
+                    } else {
+                        msgEl.style.color = '#dc2626';
+                        msgEl.textContent = data.message;
+                    }
+                })
+                .catch(() => { msgEl.style.color='#dc2626'; msgEl.textContent='Network error.'; });
+        }
+
+        // Close modal on overlay click
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) closeEditModal();
+        });
     </script>
 </body>
 </html>

@@ -15,7 +15,7 @@ if (!$tokenId) {
 }
 
 // Verify this token belongs to this patient and is cancellable
-$stmt = $pdo->prepare("SELECT ot.*, os.is_active FROM opd_tokens ot JOIN opd_sessions os ON ot.session_id = os.id WHERE ot.id = ? AND ot.patient_id = ?");
+$stmt = $pdo->prepare("SELECT ot.*, os.status AS session_status FROM opd_tokens ot JOIN opd_sessions os ON ot.session_id = os.id WHERE ot.id = ? AND ot.patient_id = ?");
 $stmt->execute([$tokenId, $_SESSION['user_id']]);
 $token = $stmt->fetch();
 
@@ -26,6 +26,11 @@ if (!$token) {
 
 if (!in_array($token['status'], ['waiting', 'pending'])) {
     echo json_encode(['status' => 'error', 'message' => 'This token cannot be cancelled.']);
+    exit;
+}
+
+if ($token['session_status'] !== 'active') {
+    echo json_encode(['status' => 'error', 'message' => 'This session is no longer active.']);
     exit;
 }
 

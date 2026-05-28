@@ -7,7 +7,7 @@ if (!$sessionId) {
     die("Session ID required.");
 }
 
-$stmt = $pdo->prepare("SELECT os.*, mc.name AS center_name FROM opd_sessions os JOIN medical_centers mc ON os.clinic_id = mc.id WHERE os.id = ? AND os.is_active = 1");
+$stmt = $pdo->prepare("SELECT os.*, mc.name AS center_name FROM opd_sessions os JOIN medical_centers mc ON os.clinic_id = mc.id WHERE os.id = ? AND os.status = 'active'");
 $stmt->execute([$sessionId]);
 $session = $stmt->fetch();
 
@@ -20,7 +20,7 @@ if (!$session) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Walk-in Kiosk | MedConnect</title>
+    <title>On Site Patients | MedConnect</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -55,7 +55,7 @@ if (!$session) {
 <body>
     <div class="kiosk-container">
         <div class="kiosk-header">
-            <h1><i class="fa-solid fa-hospital-user"></i> Walk-in Kiosk</h1>
+            <h1><i class="fa-solid fa-hospital-user"></i> On Site Patients</h1>
             <p><?php echo htmlspecialchars($session['center_name']); ?> - Dr. <?php echo htmlspecialchars($session['doctor_name']); ?></p>
         </div>
         
@@ -77,7 +77,7 @@ if (!$session) {
                         <label>Phone Number (Optional)</label>
                         <input type="text" name="phone" class="form-control" placeholder="Enter phone number">
                     </div>
-                    <button type="submit" class="btn-kiosk">Get Walk-in Token</button>
+                    <button type="submit" class="btn-kiosk">Get On Site Token</button>
                 </form>
             </div>
             
@@ -106,7 +106,7 @@ if (!$session) {
                 If you decide to leave the medical center before your turn, you MUST cancel your token using the "Cancel Token" tab to let others take your place.
             </div>
             
-            <button class="btn-kiosk" style="margin-top: 1.5rem;" onclick="resetKiosk()">Back to Kiosk</button>
+            <button class="btn-kiosk" style="margin-top: 1.5rem;" onclick="resetKiosk()">Back</button>
         </div>
     </div>
 

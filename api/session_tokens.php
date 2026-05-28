@@ -47,15 +47,16 @@ for ($i = 1; $i <= $maxSlots; $i++) {
         } elseif ($t['status'] === 'waiting') {
             $displayStatus = 'pending';
         } elseif ($t['status'] === 'served' || $t['status'] === 'called') {
-            $displayStatus = 'done';
+            continue; // Remove completed tokens from the dashboard
         } else {
             $displayStatus = $t['status'];
         }
+        $patientName = ($t['token_type'] === 'walk-in') ? 'On Site Patients' : $t['patient_name'];
         $slots[] = [
             'slot' => $i,
             'token_number' => $padded,
             'token_id' => (int)$t['id'],
-            'patient_name' => $t['patient_name'],
+            'patient_name' => $patientName,
             'patient_phone' => $t['patient_phone'],
             'status' => $displayStatus,
             'db_status' => $t['status'],
@@ -79,11 +80,12 @@ foreach ($lateRequests as $lr) {
     // Check if already in slots (it would be if token_number is within max range)
     $slotNum = (int)ltrim(str_replace('OPD-', '', $lr['token_number']), '0');
     if ($slotNum <= $maxSlots) continue; // already included above
+    $patientName = ($lr['token_type'] === 'walk-in') ? 'On Site Patients' : $lr['patient_name'];
     $slots[] = [
         'slot' => 'LATE',
         'token_number' => $lr['token_number'],
         'token_id' => (int)$lr['id'],
-        'patient_name' => $lr['patient_name'],
+        'patient_name' => $patientName,
         'patient_phone' => $lr['patient_phone'],
         'status' => 'late_request',
         'db_status' => 'late_request',

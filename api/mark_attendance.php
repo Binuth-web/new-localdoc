@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') { exit; }
 
 // Accept both 'staff' (DB value) and 'medical_staff' (legacy session value)
 $role = $_SESSION['role'] ?? '';
-if (!isset($_SESSION['user_id']) || !in_array($role, ['staff', 'medical_staff'])) {
+if (!isset($_SESSION['user_id']) || !in_array($role, ['staff', 'medical_staff', 'admin', 'doctor'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized.']);
     exit;
 }
@@ -14,7 +14,7 @@ if (!isset($_SESSION['user_id']) || !in_array($role, ['staff', 'medical_staff'])
 $tokenId = (int)($_POST['token_id'] ?? 0);
 $action  = trim($_POST['action'] ?? ''); // 'present' or 'absent'
 
-if (!$tokenId || !in_array($action, ['present', 'absent'])) {
+if (!$tokenId || !in_array($action, ['present', 'absent', 'complete'])) {
     echo json_encode(['status' => 'error', 'message' => 'token_id and valid action required.']);
     exit;
 }
@@ -31,6 +31,9 @@ if (!$token) {
 if ($action === 'present') {
     $pdo->prepare("UPDATE opd_tokens SET attendance_marked = 1 WHERE id = ?")->execute([$tokenId]);
     echo json_encode(['status' => 'success', 'message' => 'Marked as present.']);
+} elseif ($action === 'complete') {
+    $pdo->prepare("UPDATE opd_tokens SET status = 'served', attendance_marked = 1 WHERE id = ?")->execute([$tokenId]);
+    echo json_encode(['status' => 'success', 'message' => 'Marked as completed.']);
 } else {
     // Mark as no-show and notify the patient
     $pdo->prepare("UPDATE opd_tokens SET status = 'no-show', attendance_marked = 0 WHERE id = ?")->execute([$tokenId]);
