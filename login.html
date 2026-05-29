@@ -26,16 +26,12 @@
                 <div id="patient-alert-box" class="alert"></div>
 
                 <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" name="full_name" class="form-control" required placeholder="Enter your full name">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" class="form-control" required placeholder="Enter your first name">
                 </div>
                 <div class="form-group">
-                    <label>Contact Number</label>
-                    <input type="tel" name="phone" class="form-control" required placeholder="Enter your phone number">
-                </div>
-                <div class="form-group">
-                    <label>Age</label>
-                    <input type="number" name="age" class="form-control" required min="0" max="150" placeholder="Enter your age">
+                    <label>NIC Number</label>
+                    <input type="text" name="id_number" class="form-control" required placeholder="Enter your NIC number">
                 </div>
 
                 <button type="submit" class="btn-primary" id="patient-submit-btn" style="width: 100%; margin-top: 0.5rem;">
@@ -51,17 +47,29 @@
             <form class="login-form" id="registerForm" style="display: none;" onsubmit="handlePatientRegister(event)">
                 <div id="reg-alert-box" class="alert"></div>
 
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" name="full_name" class="form-control" required placeholder="Enter your full name">
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" class="form-control" required placeholder="First Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" class="form-control" required placeholder="Last Name">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Contact Number</label>
-                    <input type="tel" name="phone" class="form-control" required placeholder="Enter your phone number">
+                    <label>NIC Number</label>
+                    <input type="text" name="id_number" class="form-control" required placeholder="Enter your NIC number">
                 </div>
-                <div class="form-group">
-                    <label>Age</label>
-                    <input type="number" name="age" class="form-control" required min="0" max="150" placeholder="Enter your age">
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Date of Birth</label>
+                        <input type="date" name="dob" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number</label>
+                        <input type="tel" name="phone" class="form-control" required placeholder="Phone number">
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%; margin-top: 0.5rem;">
@@ -139,6 +147,9 @@
             event.preventDefault();
             const form = document.getElementById('registerForm');
             const formData = new FormData(form);
+            const urlParams = new URLSearchParams(window.location.search);
+            const centerId = urlParams.get('center_id');
+            if (centerId) formData.append('center_id', centerId);
             const alertBox = document.getElementById('reg-alert-box');
             const submitBtn = document.getElementById('reg-submit-btn');
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';

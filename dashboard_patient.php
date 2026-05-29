@@ -10,7 +10,7 @@ require 'api/helpers.php';
 $appointments = [];
 if (hasOpdTables($pdo)) {
     $stmt = $pdo->prepare("
-        SELECT ot.id AS token_db_id, ot.status, ot.attendance_marked, ot.created_at, ot.token_number,
+        SELECT ot.id AS token_db_id, ot.status, ot.attendance_marked, ot.was_late_request, ot.created_at, ot.token_number,
                os.id AS session_id, os.opd_name AS specialization,
                COALESCE(os.doctor_name, os.opd_name, 'OPD') AS doctor_first,
                os.session_date AS date, os.start_time, os.end_time, os.status AS session_status,
@@ -166,7 +166,7 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
                     <?php foreach ($appointments as $apt):
                         [$label, $color, $bg] = getDisplayStatus($apt['status'], (int)$apt['attendance_marked']);
                         $tokenNum = str_replace('OPD-', '', $apt['token_number'] ?? '');
-                        $canCancel = in_array($apt['status'], ['waiting']) && !$apt['attendance_marked'];
+                        $canCancel = in_array($apt['status'], ['waiting']) && (!$apt['attendance_marked'] || $apt['was_late_request'] == 1);
                         $canLateReq = in_array($apt['status'], ['waiting', 'no-show']) && !$apt['attendance_marked'] && $apt['session_status'] === 'active';
                     ?>
                         <div class="apt-card">

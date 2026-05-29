@@ -1,5 +1,4 @@
 <?php
-session_start();
 require 'api/db_connect.php';
 
 $sessionId = filter_input(INPUT_GET, 'session_id', FILTER_VALIDATE_INT);

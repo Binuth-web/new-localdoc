@@ -7,12 +7,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
 require 'api/db_connect.php';
 require 'api/helpers.php';
 
-$stmt = $pdo->prepare('SELECT full_name, email, phone FROM users WHERE id = ?');
+$stmt = $pdo->prepare('SELECT full_name, email, phone, id_number, date_of_birth FROM users WHERE id = ?');
 $stmt->execute([$_SESSION['user_id']]);
 $row = $stmt->fetch();
 $user = splitFullName($row['full_name'] ?? '');
 $user['email'] = $row['email'] ?? '';
 $user['phone'] = $row['phone'] ?? '';
+$user['id_number'] = $row['id_number'] ?? '';
+$user['date_of_birth'] = $row['date_of_birth'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -71,14 +73,15 @@ $user['phone'] = $row['phone'] ?? '';
                 <label>Phone Number</label>
                 <input type="text" name="phone" class="form-control" value="<?php echo htmlspecialchars($user['phone']); ?>" disabled>
             </div>
-            <div id="password-section" style="display: none;">
-                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label>New Password (Leave blank to keep current)</label>
-                    <input type="password" name="password" class="form-control" placeholder="Enter new password">
-                </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>NIC Number</label>
+                <input type="text" name="id_number" class="form-control" value="<?php echo htmlspecialchars($user['id_number']); ?>" required disabled>
             </div>
-            
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Date of Birth</label>
+                <input type="date" name="dob" class="form-control" value="<?php echo htmlspecialchars($user['date_of_birth']); ?>" required disabled>
+            </div>
+
             <button type="submit" class="btn-primary" id="save-btn" style="width: 100%; margin-top: 1rem; display: none;">Save Changes</button>
         </form>
     </div>
@@ -88,7 +91,6 @@ $user['phone'] = $row['phone'] ?? '';
             document.querySelectorAll('#profileForm input').forEach(input => input.disabled = false);
             document.getElementById('edit-btn').style.display = 'none';
             document.getElementById('save-btn').style.display = 'block';
-            document.getElementById('password-section').style.display = 'block';
         }
         function updateProfile(event) {
             event.preventDefault();
@@ -106,6 +108,7 @@ $user['phone'] = $row['phone'] ?? '';
                 if(data.status === 'success') {
                     alertBox.className = 'alert success';
                     alertBox.innerText = data.message;
+                    setTimeout(() => window.location.href = 'index.html', 1500);
                 } else {
                     alertBox.className = 'alert error';
                     alertBox.innerText = data.message;

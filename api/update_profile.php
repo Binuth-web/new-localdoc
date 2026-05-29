@@ -16,26 +16,19 @@ $firstName = trim((string) ($_POST['first_name'] ?? ''));
 $lastName = trim((string) ($_POST['last_name'] ?? ''));
 $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
 $phone = trim((string) ($_POST['phone'] ?? ''));
-$password = $_POST['password'] ?? '';
+$idNumber = trim((string) ($_POST['id_number'] ?? ''));
+$dob = trim((string) ($_POST['dob'] ?? ''));
 
-if (!$firstName || !$email) {
-    echo json_encode(['status' => 'error', 'message' => 'Name and email are required.']);
+if (!$firstName || !$email || !$idNumber || !$dob) {
+    echo json_encode(['status' => 'error', 'message' => 'Name, Email, NIC Number, and DOB are required.']);
     exit;
 }
 
 $fullName = trim($firstName . ' ' . $lastName);
 
 try {
-    if ($password !== '') {
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare(
-            'UPDATE users SET full_name = ?, email = ?, phone = ?, hashed_password = ? WHERE id = ?'
-        );
-        $stmt->execute([$fullName, $email, $phone ?: null, $hash, $_SESSION['user_id']]);
-    } else {
-        $stmt = $pdo->prepare('UPDATE users SET full_name = ?, email = ?, phone = ? WHERE id = ?');
-        $stmt->execute([$fullName, $email, $phone ?: null, $_SESSION['user_id']]);
-    }
+    $stmt = $pdo->prepare('UPDATE users SET full_name = ?, email = ?, phone = ?, id_number = ?, date_of_birth = ? WHERE id = ?');
+    $stmt->execute([$fullName, $email, $phone ?: null, $idNumber, $dob, $_SESSION['user_id']]);
 
     $_SESSION['name'] = $firstName;
     echo json_encode(['status' => 'success', 'message' => 'Profile updated successfully!']);

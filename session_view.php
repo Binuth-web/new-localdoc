@@ -173,7 +173,7 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
         <div style="display:flex;gap:0.75rem;align-items:center;">
             <a href="kiosk.php?session_id=<?php echo $sessionId; ?>" target="_blank" class="back-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5);"><i class="fa-solid fa-users"></i> On Site Patients</a>
             <button class="refresh-btn" onclick="loadTokens()"><i class="fa-solid fa-rotate"></i> Refresh</button>
-            <a href="dashboard_staff.php" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
+            <a href="<?php echo ($_SESSION['role'] === 'admin') ? 'dashboard_admin.html' : 'dashboard_staff.php'; ?>" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
     </div>
 

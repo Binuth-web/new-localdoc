@@ -15,18 +15,17 @@ if ($role !== $portal && !($role === 'medical_staff' && $portal === 'staff')) {
 }
 
 if ($role === 'patient') {
-    // Patient login uses Full Name, Phone, and Age
-    $fullName = trim((string) ($_POST['full_name'] ?? ''));
-    $phone = trim((string) ($_POST['phone'] ?? ''));
-    $age = filter_input(INPUT_POST, 'age', FILTER_VALIDATE_INT);
+    // Patient login uses First Name and ID Number
+    $firstName = trim((string) ($_POST['first_name'] ?? ''));
+    $idNumber = trim((string) ($_POST['id_number'] ?? ''));
 
-    if (!$fullName || !$phone || $age === false) {
-        echo json_encode(['status' => 'error', 'message' => 'Full Name, Contact Number, and Age are required.']);
+    if (!$firstName || !$idNumber) {
+        echo json_encode(['status' => 'error', 'message' => 'First Name and NIC Number are required.']);
         exit;
     }
 
-    $stmt = $pdo->prepare('SELECT id, full_name, role, center_id FROM users WHERE phone = ? AND full_name = ? AND age = ? AND role = "patient"');
-    $stmt->execute([$phone, $fullName, $age]);
+    $stmt = $pdo->prepare('SELECT id, full_name, role, center_id FROM users WHERE id_number = ? AND full_name LIKE ? AND role = "patient"');
+    $stmt->execute([$idNumber, $firstName . '%']);
     $user = $stmt->fetch();
 
     if ($user) {
@@ -38,9 +37,9 @@ if ($role === 'patient') {
         }
 
         $redirect = 'dashboard_patient.php';
-        $redirectParam = $_GET['redirect'] ?? '';
-        if ($redirectParam === 'book_appointment.html' && isset($_GET['center'])) {
-            $redirect = 'book_appointment.html?center=' . urlencode($_GET['center']);
+        $redirectParam = $_POST['redirect'] ?? $_GET['redirect'] ?? '';
+        if ($redirectParam === 'book_appointment.html' && isset($_POST['center'])) {
+            $redirect = 'book_appointment.html?center=' . urlencode($_POST['center']);
         } elseif (!empty($redirectParam)) {
             $redirect = $redirectParam;
         }

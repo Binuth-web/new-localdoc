@@ -31,17 +31,29 @@
             <input type="hidden" name="center_id" id="center_id_input">
             <input type="hidden" name="center_name" id="center_name_input">
 
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" name="full_name" class="form-control" required>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" class="form-control" required>
+                </div>
             </div>
             <div class="form-group">
-                <label>Contact Number</label>
-                <input type="tel" name="phone" class="form-control" required>
+                <label>NIC Number</label>
+                <input type="text" name="id_number" class="form-control" required>
             </div>
-            <div class="form-group">
-                <label>Age</label>
-                <input type="number" name="age" class="form-control" required min="0" max="150">
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <input type="date" name="dob" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Contact Number</label>
+                    <input type="tel" name="phone" class="form-control" required>
+                </div>
             </div>
 
             <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%;">Create account &amp; continue</button>

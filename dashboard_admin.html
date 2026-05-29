@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,75 +9,383 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; background: #f1f5f9; font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
-        
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
         /* Sidebar */
-        .sidebar { width: 260px; background: #0f4c81; color: white; display: flex; flex-direction: column; }
-        .sidebar-header { padding: 1.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .sidebar-header h2 { margin: 0; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-        .nav-list { list-style: none; padding: 1rem 0; margin: 0; flex: 1; overflow-y: auto; }
-        .nav-item { padding: 0.8rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; color: rgba(255,255,255,0.8); cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
-        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: white; border-left-color: #10b981; }
-        .nav-item i { width: 20px; text-align: center; }
-        
+        .sidebar {
+            width: 260px;
+            background: #0f4c81;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .nav-list {
+            list-style: none;
+            padding: 1rem 0;
+            margin: 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: 0.2s;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: #10b981;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
         /* Main Content */
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .top-bar { background: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); z-index: 10; }
-        .content-area { flex: 1; padding: 2rem; overflow-y: auto; }
-        .view-section { display: none; }
-        .view-section.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* Cards & Grids */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1rem; }
-        .stat-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-        .stat-icon.blue { background: #dbeafe; color: #1d4ed8; }
-        .stat-icon.green { background: #dcfce7; color: #166534; }
-        .stat-icon.orange { background: #ffedd5; color: #c2410c; }
-        .stat-icon.red { background: #fee2e2; color: #991b1b; }
-        .stat-info h3 { margin: 0; font-size: 2rem; color: #1e293b; }
-        .stat-info p { margin: 0; font-size: 0.85rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
-        
-        .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 2rem; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .card-header h3 { margin: 0; color: #1e293b; }
-        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-icon.blue {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .stat-icon.green {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .stat-icon.orange {
+            background: #ffedd5;
+            color: #c2410c;
+        }
+
+        .stat-icon.red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .stat-info h3 {
+            margin: 0;
+            font-size: 2rem;
+            color: #1e293b;
+        }
+
+        .stat-info p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            color: #1e293b;
+        }
+
         /* Tables */
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f8fafc; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        td { font-size: 0.95rem; color: #334155; }
-        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            font-size: 0.95rem;
+            color: #334155;
+        }
+
         /* Buttons */
-        .btn { padding: 0.5rem 1rem; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; font-size: 0.9rem; }
-        .btn-primary { background: #10b981; color: white; }
-        .btn-primary:hover { background: #059669; }
-        .btn-secondary { background: #f1f5f9; color: #475569; }
-        .btn-secondary:hover { background: #e2e8f0; }
-        .btn-danger { background: #fee2e2; color: #dc2626; }
-        .btn-danger:hover { background: #fca5a5; }
-        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background: #fca5a5;
+        }
+
         /* Toggle Switch */
-        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background-color: #10b981; }
-        input:checked + .slider:before { transform: translateX(20px); }
-        
-        .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: white; padding: 1rem 1.5rem; border-radius: 8px; transform: translateY(100px); opacity: 0; transition: 0.3s; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #10b981;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1e293b;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: 0.3s;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
         /* Modals */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; }
-        .modal { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .modal-header h3 { margin: 0; }
-        .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8; }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .modal {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #94a3b8;
+        }
     </style>
 </head>
+
 <body>
 
     <!-- Sidebar -->
@@ -85,10 +394,13 @@
             <h2><i class="fa-solid fa-shield-halved"></i> Platform Admin</h2>
         </div>
         <ul class="nav-list">
-            <li class="nav-item active" onclick="switchTab('analytics')"><i class="fa-solid fa-chart-pie"></i> Analytics</li>
-            <li class="nav-item" onclick="switchTab('centers')"><i class="fa-solid fa-hospital"></i> Medical Centers</li>
+            <li class="nav-item active" onclick="switchTab('analytics')"><i class="fa-solid fa-chart-pie"></i> Analytics
+            </li>
+            <li class="nav-item" onclick="switchTab('centers')"><i class="fa-solid fa-hospital"></i> Medical Centers
+            </li>
             <li class="nav-item" onclick="switchTab('users')"><i class="fa-solid fa-users"></i> Users & Staff</li>
-            <li class="nav-item" onclick="switchTab('sessions')"><i class="fa-solid fa-calendar-check"></i> All Sessions</li>
+            <li class="nav-item" onclick="switchTab('sessions')"><i class="fa-solid fa-calendar-check"></i> All Sessions
+            </li>
         </ul>
     </aside>
 
@@ -100,19 +412,22 @@
         </div>
 
         <div class="content-area">
-            
+
             <!-- Analytics View -->
             <div id="view-analytics" class="view-section active">
-                <div class="card" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
+                <div class="card"
+                    style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
                     <div style="flex:1;">
                         <label style="font-size:0.85rem; color:#64748b; font-weight:600;">Filter by Center:</label>
-                        <select id="analyticsCenterFilter" class="form-control" style="width:100%; max-width:300px; padding:0.5rem;" onchange="loadAnalytics()">
+                        <select id="analyticsCenterFilter" class="form-control"
+                            style="width:100%; max-width:300px; padding:0.5rem;" onchange="loadAnalytics()">
                             <option value="0">All Medical Centers</option>
                         </select>
                     </div>
                     <div>
                         <label style="font-size:0.85rem; color:#64748b; font-weight:600;">Date:</label>
-                        <input type="date" id="analyticsDate" class="form-control" style="padding:0.5rem;" onchange="loadAnalytics()">
+                        <input type="date" id="analyticsDate" class="form-control" style="padding:0.5rem;"
+                            onchange="loadAnalytics()">
                     </div>
                 </div>
 
@@ -147,18 +462,12 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Token Status Breakdown</h3>
-                        </div>
-                        <canvas id="tokenChart" height="200"></canvas>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Token Status Breakdown</h3>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Peak Booking Hours</h3>
-                        </div>
-                        <canvas id="peakChart" height="200"></canvas>
+                    <div style="position: relative; height: 250px; width: 100%;">
+                        <canvas id="tokenChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -168,7 +477,8 @@
                 <div class="card">
                     <div class="card-header">
                         <h3>Medical Centers</h3>
-                        <button class="btn btn-primary" onclick="openAddCenterModal()"><i class="fa-solid fa-plus"></i> Add Center</button>
+                        <button class="btn btn-primary" onclick="openAddCenterModal()"><i class="fa-solid fa-plus"></i>
+                            Add Center</button>
                     </div>
                     <table>
                         <thead>
@@ -188,10 +498,30 @@
 
             <!-- Users View -->
             <div id="view-users" class="view-section">
+                <!-- Pending Staff Approvals -->
+                <div class="card" id="pendingStaffCard"
+                    style="display: none; border-left: 4px solid #f59e0b; background: #fffbeb;">
+                    <div class="card-header">
+                        <h3 style="color: #92400e;"><i class="fa-solid fa-user-clock"></i> Pending Staff Approvals</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Center</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingStaffTableBody"></tbody>
+                    </table>
+                </div>
+
                 <div class="card">
                     <div class="card-header">
                         <h3>Platform Users</h3>
-                        <select id="userRoleFilter" class="form-control" style="width: auto; padding: 0.5rem;" onchange="loadUsers()">
+                        <select id="userRoleFilter" class="form-control" style="width: auto; padding: 0.5rem;"
+                            onchange="loadUsers()">
                             <option value="all">All Roles</option>
                             <option value="patient">Patients</option>
                             <option value="doctor">Doctors</option>
@@ -269,7 +599,8 @@
                     <label>Full Address</label>
                     <input type="text" name="address" class="form-control" required>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Add Center</button>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Add
+                    Center</button>
             </form>
         </div>
     </div>
@@ -291,10 +622,10 @@
         function switchTab(tab) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             event.currentTarget.classList.add('active');
-            
+
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById('view-' + tab).classList.add('active');
-            
+
             const titles = {
                 'analytics': 'Analytics Overview',
                 'centers': 'Manage Medical Centers',
@@ -304,8 +635,16 @@
             document.getElementById('pageTitle').textContent = titles[tab];
 
             if (tab === 'centers') loadCenters();
-            if (tab === 'users') loadUsers();
+            if (tab === 'users') { loadUsers(); loadPendingStaff(); }
             if (tab === 'sessions') loadSessions();
+        }
+
+        function handleAuthError(res) {
+            if (res.status === 'error' && (res.message.includes('Unauthorized') || res.message.includes('Admin access'))) {
+                window.location.href = 'admin_login.html';
+                return true;
+            }
+            return false;
         }
 
         // Toast
@@ -334,16 +673,17 @@
         function loadAnalytics() {
             const date = document.getElementById('analyticsDate').value;
             const cid = document.getElementById('analyticsCenterFilter').value;
-            
+
             fetch(`api/admin_analytics.php?date=${date}&center_id=${cid}`)
                 .then(r => r.json())
                 .then(res => {
+                    if (handleAuthError(res)) return;
                     if (res.status !== 'success') return;
                     const d = res.data;
                     const t = d.tokens;
 
                     document.getElementById('statTotalSessions').textContent = d.sessions.total;
-                    
+
                     const totalAttended = t.present + t.done + t.walkin_present;
                     const attRate = t.total_booked > 0 ? Math.round((totalAttended / t.total_booked) * 100) : 0;
                     document.getElementById('statAttendance').textContent = attRate + '%';
@@ -355,7 +695,6 @@
                     document.getElementById('statCancellation').textContent = canRate + '%';
 
                     updateTokenChart(t);
-                    updatePeakChart(d.peak_hours);
                 });
         }
 
@@ -375,33 +714,13 @@
             });
         }
 
-        function updatePeakChart(hoursData) {
-            const ctx = document.getElementById('peakChart').getContext('2d');
-            if (peakChartInst) peakChartInst.destroy();
-            
-            const labels = hoursData.map(h => h.hour + ':00');
-            const data = hoursData.map(h => h.count);
-
-            peakChartInst = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Tokens Booked',
-                        data: data,
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
-        }
 
         // --- Centers ---
         function loadCenters() {
             fetch('api/admin_centers.php')
                 .then(r => r.json())
                 .then(res => {
+                    if (handleAuthError(res)) return;
                     const tb = document.getElementById('centersTableBody');
                     tb.innerHTML = res.data.map(c => `
                         <tr>
@@ -442,7 +761,7 @@
 
         function openAddCenterModal() { document.getElementById('addCenterModal').style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        
+
         function submitAddCenter(e) {
             e.preventDefault();
             fetch('api/add_center.php', { method: 'POST', body: new FormData(e.target) })
@@ -459,6 +778,7 @@
             fetch(`api/admin_users.php?role=${role}`)
                 .then(r => r.json())
                 .then(res => {
+                    if (handleAuthError(res)) return;
                     const tb = document.getElementById('usersTableBody');
                     tb.innerHTML = res.data.map(u => `
                         <tr>
@@ -485,7 +805,60 @@
             fd.append('id', id); fd.append('action', 'toggle_active'); fd.append('is_active', val ? 1 : 0);
             fetch('api/admin_users.php', { method: 'POST', body: fd })
                 .then(r => r.json())
-                .then(res => showToast(res.message, res.status !== 'success'));
+                .then(res => {
+                    if (handleAuthError(res)) return;
+                    showToast(res.message, res.status !== 'success');
+                });
+        }
+
+        function loadPendingStaff() {
+            fetch('api/get_pending_staff.php')
+                .then(r => r.json())
+                .then(res => {
+                    if (handleAuthError(res)) return;
+                    const card = document.getElementById('pendingStaffCard');
+                    const tb = document.getElementById('pendingStaffTableBody');
+                    if (res.status === 'success' && res.data.length > 0) {
+                        card.style.display = 'block';
+                        tb.innerHTML = res.data.map(u => `
+                            <tr>
+                                <td><strong>${u.full_name}</strong></td>
+                                <td>${u.email}</td>
+                                <td><i class="fa-solid fa-hospital" style="color: #94a3b8;"></i> ${u.center_name || 'N/A'}</td>
+                                <td>
+                                    <button onclick="approveStaff(${u.id})" class="btn btn-primary btn-sm"><i class="fa-solid fa-check"></i> Approve</button>
+                                    <button onclick="rejectStaff(${u.id})" class="btn btn-danger btn-sm"><i class="fa-solid fa-xmark"></i> Reject</button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+        }
+
+        function approveStaff(id) {
+            if (!confirm('Approve this staff member?')) return;
+            const fd = new FormData(); fd.append('user_id', id);
+            fetch('api/approve_staff.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(res => {
+                    if (handleAuthError(res)) return;
+                    showToast(res.message, res.status !== 'success');
+                    if (res.status === 'success') { loadPendingStaff(); loadUsers(); }
+                });
+        }
+
+        function rejectStaff(id) {
+            if (!confirm('Reject and delete this staff registration?')) return;
+            const fd = new FormData(); fd.append('user_id', id);
+            fetch('api/reject_staff.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(res => {
+                    if (handleAuthError(res)) return;
+                    showToast(res.message, res.status !== 'success');
+                    if (res.status === 'success') { loadPendingStaff(); }
+                });
         }
 
         // --- Sessions ---
@@ -493,18 +866,19 @@
             fetch('api/admin_sessions.php')
                 .then(r => r.json())
                 .then(res => {
+                    if (handleAuthError(res)) return;
                     const tb = document.getElementById('sessionsTableBody');
                     tb.innerHTML = res.data.map(s => {
                         let statusColor = '#3b82f6';
                         if (s.status === 'completed') statusColor = '#10b981';
                         if (s.status === 'blocked') statusColor = '#ef4444';
-                        
+
                         return `
                         <tr>
                             <td>${s.session_date}</td>
                             <td>${s.center_name}</td>
                             <td>Dr. ${s.doctor_name}</td>
-                            <td>${s.start_time.substring(0,5)} - ${s.end_time.substring(0,5)}</td>
+                            <td>${s.start_time.substring(0, 5)} - ${s.end_time.substring(0, 5)}</td>
                             <td><span style="color:${statusColor}; font-weight:600; text-transform:uppercase; font-size:0.8rem;">${s.status}</span></td>
                             <td>
                                 <a href="session_view.php?id=${s.id}" target="_blank" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye"></i> View Queue</a>
@@ -515,4 +889,5 @@
         }
     </script>
 </body>
+
 </html>

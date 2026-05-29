@@ -203,7 +203,7 @@ function handleBookAppointment(centerId, centerName) {
 }
 
 function goToRegistration(centerId, centerName) {
-    window.location.href = `register.html?center_id=${centerId}&center=${encodeURIComponent(centerName)}`;
+    window.location.href = `login.html?redirect=index.html%3Fbook_center%3D${centerId}&center_id=${centerId}&center=${encodeURIComponent(centerName)}`;
 }
 
 function openBookingForCenter(centerId) {
@@ -306,7 +306,7 @@ function closeModal() {
 
 function bookAppointment(centerId, doctorId, availabilityId) {
     if (!patientLoggedIn) {
-        window.location.href = `register.html?center_id=${centerId}&avail=${availabilityId}`;
+        window.location.href = `login.html?redirect=index.html%3Fbook_center%3D${centerId}&center_id=${centerId}&avail=${availabilityId}`;
         return;
     }
 

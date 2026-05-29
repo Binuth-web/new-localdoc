@@ -1,10 +1,9 @@
 <?php
-session_start();
+require 'api/db_connect.php';
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['staff', 'medical_staff', 'admin', 'doctor'])) {
     header('Location: login.html');
     exit;
 }
-require 'api/db_connect.php';
 require 'api/helpers.php';
 
 $center_id = $_SESSION['center_id'] ?? null;
