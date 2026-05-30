@@ -51,6 +51,11 @@
 									"key": "portal",
 									"value": "admin",
 									"type": "text"
+								},
+								{
+									"key": "role",
+									"value": "admin",
+									"type": "text"
 								}
 							]
 						},
@@ -219,7 +224,7 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost/Binuth-web/new-localdoc/api",
+			"value": "http://localhost:8000/api",
 			"type": "string"
 		}
 	]

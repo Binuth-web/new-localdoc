@@ -44,6 +44,7 @@ if ($role === 'patient') {
             $redirect = $redirectParam;
         }
 
+        http_response_code(200);
         echo json_encode([
             'status' => 'success',
             'message' => 'Login successful',
