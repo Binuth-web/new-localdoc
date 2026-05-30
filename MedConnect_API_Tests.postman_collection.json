@@ -1,0 +1,226 @@
+{
+	"info": {
+		"_postman_id": "6a96e952-cf8a-4db5-9eab-d249f807dfc3",
+		"name": "MedConnect API Tests",
+		"description": "Automated test suite for MedConnect API endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth Flow",
+			"item": [
+				{
+					"name": "Login - Valid User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is JSON\", function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Login should be successful or fail gracefully\", function () {",
+									"    pm.expect(jsonData.status).to.be.oneOf(['success', 'error']);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "username",
+									"value": "admin@medconnect",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "admin123",
+									"type": "text"
+								},
+								{
+									"key": "portal",
+									"value": "admin",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/login.php",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login.php"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/logout.php",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"logout.php"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Patient APIs",
+			"item": [
+				{
+					"name": "Get Medical Centers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Fetch should succeed\", function () {",
+									"    pm.expect(jsonData.status).to.eql(\"success\");",
+									"});",
+									"pm.test(\"Response has data array\", function () {",
+									"    pm.expect(jsonData.data).to.be.an(\"array\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/get_centers.php",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"get_centers.php"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin APIs",
+			"item": [
+				{
+					"name": "Get Pending Staff",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Must return success or auth error\", function () {",
+									"    pm.expect(jsonData.status).to.be.oneOf(['success', 'error']);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/get_pending_staff.php",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"get_pending_staff.php"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Platform Users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin_users.php?role=all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin_users.php"
+							],
+							"query": [
+								{
+									"key": "role",
+									"value": "all"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost/Binuth-web/new-localdoc/api",
+			"type": "string"
+		}
+	]
+}
