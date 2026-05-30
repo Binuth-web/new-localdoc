@@ -7,6 +7,11 @@
     <title>Staff Registration | MedConnect</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .autocomplete-items { position: absolute; border: 1px solid #d4d4d4; border-bottom: none; border-top: none; z-index: 99; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background-color: #fff; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; }
+        .autocomplete-items div { padding: 10px; cursor: pointer; border-bottom: 1px solid #d4d4d4; }
+        .autocomplete-items div:hover { background-color: #e9e9e9; }
+    </style>
 </head>
 
 <body class="auth-page">
@@ -27,35 +32,29 @@
 
         <div id="reg-alert" class="alert"></div>
 
-        <form id="staffRegisterForm" onsubmit="handleStaffRegistration(event)">
-            <div class="form-group">
+        <form id="staffRegisterForm" onsubmit="handleStaffRegistration(event)" autocomplete="off">
+            <div class="form-group" style="position: relative;">
                 <label>Medical Center</label>
-                <select name="center_id" id="center_select" class="form-control" required>
-                    <option value="">Loading centers...</option>
-                </select>
+                <input type="text" id="center_input" class="form-control" placeholder="Type medical center name" required autocomplete="nope" name="center_search">
+                <div id="autocomplete_list" class="autocomplete-items"></div>
+                <input type="hidden" name="center_id" id="center_id_hidden">
             </div>
 
-            <div class="form-row-2">
-                <div class="form-group">
-                    <label>First Name</label>
-                    <input type="text" name="first_name" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Last Name</label>
-                    <input type="text" name="last_name" class="form-control" required>
-                </div>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="fullname_input" name="full_name" class="form-control" required autocomplete="nope">
             </div>
             <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" name="email" class="form-control" required>
+                <label>Contact Number</label>
+                <input type="tel" name="phone" class="form-control" required autocomplete="nope">
             </div>
             <div class="form-group">
-                <label>Phone Number</label>
-                <input type="tel" name="phone" class="form-control" required>
+                <label>Create Username <span style="color:#e53e3e; font-size:0.78rem; font-weight:400;">(fullname@medicalcenter)</span></label>
+                <input type="text" id="username_input" name="username" class="form-control" placeholder="Auto-generated username" required readonly style="background-color: #f3f4f6; cursor: not-allowed;">
             </div>
             <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" class="form-control" required>
+                <label>Create Password</label>
+                <input type="password" name="password" class="form-control" required minlength="8" autocomplete="new-password">
             </div>
 
             <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%;">Register Staff Account</button>
@@ -67,28 +66,99 @@
     </div>
 
     <script>
+        let centersData = [];
         document.addEventListener('DOMContentLoaded', () => {
             fetch('api/get_centers.php')
                 .then(res => res.json())
                 .then(data => {
-                    const select = document.getElementById('center_select');
-                    select.innerHTML = '<option value="">Select your medical center</option>';
                     if (data.status === 'success') {
-                        data.data.forEach(center => {
-                            const option = document.createElement('option');
-                            option.value = center.center_id;
-                            option.textContent = center.name + (center.city ? ` (${center.city})` : '');
-                            select.appendChild(option);
-                        });
+                        centersData = data.data;
                     }
                 });
+
+            const centerInput = document.getElementById('center_input');
+            const autocompleteList = document.getElementById('autocomplete_list');
+            const hiddenId = document.getElementById('center_id_hidden');
+
+            centerInput.addEventListener('input', function() {
+                const val = this.value;
+                autocompleteList.innerHTML = '';
+                autocompleteList.style.display = 'none';
+                hiddenId.value = '';
+
+                if (val.length < 4) return false;
+
+                centersData.forEach(center => {
+                    const displayName = center.name + (center.city ? ` (${center.city})` : '');
+                    if (displayName.toLowerCase().startsWith(val.toLowerCase())) {
+                        autocompleteList.style.display = 'block';
+                        const item = document.createElement('div');
+                        
+                        const matchIndex = displayName.toLowerCase().indexOf(val.toLowerCase());
+                        item.innerHTML = displayName.substring(0, matchIndex) + 
+                                         "<strong>" + displayName.substring(matchIndex, matchIndex + val.length) + "</strong>" + 
+                                         displayName.substring(matchIndex + val.length);
+                        
+                        item.addEventListener('click', function() {
+                            centerInput.value = displayName;
+                            hiddenId.value = center.center_id;
+                            autocompleteList.innerHTML = '';
+                            autocompleteList.style.display = 'none';
+                            autoFillUsername();
+                        });
+                        autocompleteList.appendChild(item);
+                    }
+                });
+            });
+
+            document.addEventListener('click', function(e) {
+                if (e.target !== centerInput) {
+                    autocompleteList.innerHTML = '';
+                    autocompleteList.style.display = 'none';
+                }
+            });
+
+            // Auto-fill username when full name is typed
+            document.getElementById('fullname_input').addEventListener('input', function() {
+                autoFillUsername();
+            });
         });
+
+        function autoFillUsername() {
+            const fullName = document.getElementById('fullname_input').value.trim();
+            const centerId = document.getElementById('center_id_hidden').value;
+            const usernameInput = document.getElementById('username_input');
+
+            if (!fullName || !centerId) return;
+
+            const selectedCenter = centersData.find(c => String(c.center_id) === String(centerId));
+            if (!selectedCenter) return;
+
+            const namePart = fullName.toLowerCase().replace(/\s+/g, '');
+            const centerPart = selectedCenter.name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+            usernameInput.value = namePart + '@' + centerPart;
+        }
 
         function handleStaffRegistration(event) {
             event.preventDefault();
 
             const alertBox = document.getElementById('reg-alert');
             const submitBtn = document.getElementById('reg-submit-btn');
+
+            const centerInputVal = document.getElementById('center_input').value;
+            const matchedCenter = centersData.find(c => {
+                const displayName = c.name + (c.city ? ` (${c.city})` : '');
+                return displayName === centerInputVal;
+            });
+
+            if (!matchedCenter) {
+                alertBox.className = 'alert error';
+                alertBox.textContent = 'Please select a valid medical center from the list.';
+                alertBox.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('center_id_hidden').value = matchedCenter.center_id;
 
             submitBtn.textContent = 'Registering…';
             submitBtn.disabled = true;

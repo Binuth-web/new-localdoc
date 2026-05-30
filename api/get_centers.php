@@ -18,18 +18,19 @@ if ($lat && $lng) {
             (6371 * acos(cos(radians(:lat)) * cos(radians(lat))
             * cos(radians(lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(lat)))) AS distance
             FROM medical_centers
+            WHERE available = 1
             ORDER BY distance ASC
             LIMIT 20";
     $stmt = $pdo->prepare($sql);
     $stmt->execute(['lat' => $lat, 'lng' => $lng]);
 } elseif ($city) {
     $sql = "SELECT $select, NULL AS distance FROM medical_centers
-            WHERE CONCAT(area, ' ', address, ' ', name) LIKE :city
+            WHERE available = 1 AND CONCAT(area, ' ', address, ' ', name) LIKE :city
             LIMIT 20";
     $stmt = $pdo->prepare($sql);
     $stmt->execute(['city' => '%' . $city . '%']);
 } else {
-    $sql = "SELECT $select, NULL AS distance FROM medical_centers LIMIT 20";
+    $sql = "SELECT $select, NULL AS distance FROM medical_centers WHERE available = 1 LIMIT 20";
     $stmt = $pdo->query($sql);
 }
 

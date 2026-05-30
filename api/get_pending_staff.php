@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 // Fetch pending staff (role='staff', is_active=0)
 try {
     $stmt = $pdo->prepare(
-        'SELECT u.id, u.full_name, u.email, m.name as center_name 
+        'SELECT u.id, u.full_name, u.email, u.phone, m.name as center_name 
          FROM users u 
          LEFT JOIN medical_centers m ON u.center_id = m.id 
          WHERE u.role = ? AND u.is_active = 0'

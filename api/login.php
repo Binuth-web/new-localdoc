@@ -54,22 +54,27 @@ if ($role === 'patient') {
     }
 
 } else {
-    // Staff and Admin login uses Email and Password
-    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+    // Staff and Admin login uses Username (or Email) and Password
+    $loginId = trim((string)($_POST['username'] ?? $_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
 
-    if (!$email || !$password) {
-        echo json_encode(['status' => 'error', 'message' => 'Email and password required.']);
+    if (!$loginId || !$password) {
+        echo json_encode(['status' => 'error', 'message' => 'Username/Email and password required.']);
         exit;
     }
 
     $dbRole = ($role === 'medical_staff') ? 'staff' : $role;
 
-    $stmt = $pdo->prepare('SELECT id, full_name, hashed_password, role, center_id FROM users WHERE email = ? AND role = ?');
-    $stmt->execute([$email, $dbRole]);
+    $stmt = $pdo->prepare('SELECT id, full_name, hashed_password, role, center_id, is_active FROM users WHERE email = ? AND role = ?');
+    $stmt->execute([$loginId, $dbRole]);
     $user = $stmt->fetch();
 
     if ($user && password_verify($password, $user['hashed_password'])) {
+        if ($user['role'] === 'staff' && (int)$user['is_active'] === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Your account is not yet approved. Please wait for admin approval.']);
+            exit;
+        }
+
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['name'] = explode(' ', $user['full_name'])[0];
@@ -88,7 +93,7 @@ if ($role === 'patient') {
             'redirect' => $redirect
         ]);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid username or password.']);
     }
 }
 ?>

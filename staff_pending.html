@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Under Review | MedConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="auth-page">
+    <nav class="navbar auth-navbar">
+        <a href="index.html" class="navbar-brand">
+            <i class="fa-solid fa-heart-pulse"></i> MedConnect
+        </a>
+        <div class="navbar-nav">
+            <a href="index.html">Back to home</a>
+        </div>
+    </nav>
+
+    <div class="auth-card" style="text-align: center; padding: 3rem 2rem;">
+        <i id="status-icon" class="fa-solid fa-user-clock" style="font-size: 4rem; color: #f59e0b; margin-bottom: 1.5rem;"></i>
+        <h2 style="margin-bottom: 1rem;">Registration Status</h2>
+        <div id="status-alert" class="alert" style="display: block; background-color: #fffbeb; color: #92400e; border: 1px solid #fcd34d; margin-bottom: 2rem;">
+            <span id="status-msg">Your account is under review.<br>You will be able to login after admin approval.</span>
+        </div>
+        <p id="status-desc" style="color: #6b7280; margin-bottom: 2rem;">We will notify you once the administrator has reviewed and approved your registration.</p>
+        <a id="action-btn" href="#" class="btn-primary" style="text-decoration: none; display: none;"></a>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user_id');
+        const actionBtn = document.getElementById('action-btn');
+        let pollInterval = null;
+
+        function applyStatus(accountStatus) {
+            if (accountStatus === 'approved') {
+                document.getElementById('status-icon').className = 'fa-solid fa-circle-check';
+                document.getElementById('status-icon').style.color = '#10b981';
+                document.getElementById('status-alert').style.backgroundColor = '#ecfdf5';
+                document.getElementById('status-alert').style.borderColor = '#6ee7b7';
+                document.getElementById('status-alert').style.color = '#047857';
+                document.getElementById('status-msg').innerHTML = 'Your account has been approved!<br>You can now login to the staff dashboard.';
+                document.getElementById('status-desc').style.display = 'none';
+                actionBtn.textContent = 'Login';
+                actionBtn.href = 'staff_login.html';
+                actionBtn.style.display = 'inline-block';
+                // Stop polling
+                if (pollInterval) clearInterval(pollInterval);
+            } else if (accountStatus === 'rejected') {
+                document.getElementById('status-icon').className = 'fa-solid fa-circle-xmark';
+                document.getElementById('status-icon').style.color = '#ef4444';
+                document.getElementById('status-alert').style.backgroundColor = '#fef2f2';
+                document.getElementById('status-alert').style.borderColor = '#fca5a5';
+                document.getElementById('status-alert').style.color = '#b91c1c';
+                document.getElementById('status-msg').innerHTML = 'Your registration request has been declined.';
+                document.getElementById('status-desc').style.display = 'none';
+                actionBtn.textContent = 'Back to Register';
+                actionBtn.href = 'register_staff.html';
+                actionBtn.style.display = 'inline-block';
+                if (pollInterval) clearInterval(pollInterval);
+            } else {
+                // Still pending — no button
+                actionBtn.style.display = 'none';
+            }
+        }
+
+        function checkStatus() {
+            if (!userId) return;
+            fetch('api/check_staff_status.php?user_id=' + userId)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        applyStatus(data.account_status);
+                    }
+                });
+        }
+
+        // Start polling every 5 seconds
+        if (userId) {
+            checkStatus(); // Immediate first check
+            pollInterval = setInterval(checkStatus, 5000);
+        } else {
+            // No user_id in URL — just show pending state with no button
+            applyStatus('pending');
+        }
+    </script>
+</body>
+</html>

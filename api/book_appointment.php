@@ -49,7 +49,7 @@ try {
 
     if ((int)$session['online_booking_enabled'] === 0) {
         $pdo->rollBack();
-        echo json_encode(['status' => 'error', 'message' => 'Online booking is currently disabled for this medical center. Please use the Walk-in Kiosk.']);
+        echo json_encode(['status' => 'error', 'message' => 'Online booking is currently disabled for this medical center.']);
         exit;
     }
 

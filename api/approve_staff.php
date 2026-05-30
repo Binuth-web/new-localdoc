@@ -18,6 +18,14 @@ try {
     $stmt->execute([$userId, 'staff']);
 
     if ($stmt->rowCount() > 0) {
+        // Insert notification
+        $notifStmt = $pdo->prepare('INSERT INTO notifications (user_id, message, type) VALUES (?, ?, ?)');
+        $notifStmt->execute([
+            $userId, 
+            'Your account has been approved. You can now login.', 
+            'info'
+        ]);
+
         echo json_encode(['status' => 'success', 'message' => 'Staff member approved successfully.']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Staff member not found or already approved.']);

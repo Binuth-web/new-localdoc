@@ -508,7 +508,8 @@
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>Email</th>
+                                <th>Username</th>
+                                <th>Phone</th>
                                 <th>Center</th>
                                 <th>Actions</th>
                             </tr>
@@ -517,29 +518,42 @@
                     </table>
                 </div>
 
+                <!-- Patients Card -->
                 <div class="card">
                     <div class="card-header">
-                        <h3>Platform Users</h3>
-                        <select id="userRoleFilter" class="form-control" style="width: auto; padding: 0.5rem;"
-                            onchange="loadUsers()">
-                            <option value="all">All Roles</option>
-                            <option value="patient">Patients</option>
-                            <option value="doctor">Doctors</option>
-                            <option value="staff">Staff</option>
-                        </select>
+                        <h3><i class="fa-solid fa-user" style="color:#3b82f6;"></i> Patients</h3>
+                        <span id="patientCount" style="background:#dbeafe; color:#1d4ed8; padding:4px 12px; border-radius:12px; font-size:0.8rem; font-weight:600;">0</span>
                     </div>
                     <table>
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Role</th>
-                                <th>Email</th>
-                                <th>Center</th>
+                                <th>Full Name</th>
+                                <th>Phone</th>
                                 <th>Status</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="usersTableBody"></tbody>
+                        <tbody id="patientsTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Staff Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-user-nurse" style="color:#10b981;"></i> Medical Staff</h3>
+                        <span id="staffCount" style="background:#dcfce7; color:#166534; padding:4px 12px; border-radius:12px; font-size:0.8rem; font-weight:600;">0</span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Full Name</th>
+                                <th>Username</th>
+                                <th>Phone</th>
+                                <th>Center</th>
+                                <th>Password</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -774,26 +788,50 @@
 
         // --- Users ---
         function loadUsers() {
-            const role = document.getElementById('userRoleFilter').value;
-            fetch(`api/admin_users.php?role=${role}`)
+            // Load Patients
+            fetch('api/admin_users.php?role=patient')
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
-                    const tb = document.getElementById('usersTableBody');
-                    tb.innerHTML = res.data.map(u => `
+                    const tb = document.getElementById('patientsTableBody');
+                    document.getElementById('patientCount').textContent = res.data.length;
+                    tb.innerHTML = res.data.length === 0
+                        ? '<tr><td colspan="3" style="text-align:center; color:#94a3b8;">No patients found.</td></tr>'
+                        : res.data.map(u => `
                         <tr>
                             <td>${u.full_name}</td>
-                            <td><span style="padding:2px 8px; background:#e2e8f0; border-radius:12px; font-size:0.75rem; text-transform:uppercase;">${u.role}</span></td>
-                            <td>${u.email}</td>
-                            <td>${u.center_name || '—'}</td>
+                            <td>${u.phone || '—'}</td>
                             <td>
                                 <label class="toggle-switch">
                                     <input type="checkbox" ${u.is_active == 1 ? 'checked' : ''} onchange="toggleUser(${u.id}, this.checked)">
                                     <span class="slider"></span>
                                 </label>
                             </td>
+                        </tr>
+                    `).join('');
+                });
+
+            // Load Staff
+            fetch('api/admin_users.php?role=staff')
+                .then(r => r.json())
+                .then(res => {
+                    if (handleAuthError(res)) return;
+                    const tb = document.getElementById('staffTableBody');
+                    document.getElementById('staffCount').textContent = res.data.length;
+                    tb.innerHTML = res.data.length === 0
+                        ? '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No staff found.</td></tr>'
+                        : res.data.map(u => `
+                        <tr>
+                            <td>${u.full_name}</td>
+                            <td style="font-family:monospace;">${u.email}</td>
+                            <td>${u.phone || '—'}</td>
+                            <td>${u.center_name || '—'}</td>
+                            <td style="letter-spacing:2px; color:#94a3b8;">••••••••</td>
                             <td>
-                                <span style="font-size:0.8rem; color:#64748b;">Auto-saved</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" ${u.is_active == 1 ? 'checked' : ''} onchange="toggleUser(${u.id}, this.checked)">
+                                    <span class="slider"></span>
+                                </label>
                             </td>
                         </tr>
                     `).join('');
@@ -824,6 +862,7 @@
                             <tr>
                                 <td><strong>${u.full_name}</strong></td>
                                 <td>${u.email}</td>
+                                <td>${u.phone || 'N/A'}</td>
                                 <td><i class="fa-solid fa-hospital" style="color: #94a3b8;"></i> ${u.center_name || 'N/A'}</td>
                                 <td>
                                     <button onclick="approveStaff(${u.id})" class="btn btn-primary btn-sm"><i class="fa-solid fa-check"></i> Approve</button>
