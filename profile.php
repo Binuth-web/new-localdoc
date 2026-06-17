@@ -36,7 +36,7 @@ $user['date_of_birth'] = $row['date_of_birth'] ?? '';
             <a href="index.html#centers-section">Get Appointment</a>
             <a href="dashboard_patient.php">My Appointments</a>
             <span style="font-weight: 600; color: var(--primary);">My Profile</span>
-            <a href="api/logout.php" class="btn-outline" style="padding: 0.4rem 1rem; border-radius: 4px; text-decoration: none; margin-left: 1rem;">Logout</a>
+            <a href="api/logout.php?portal=patient" class="btn-outline" style="padding: 0.4rem 1rem; border-radius: 4px; text-decoration: none; margin-left: 1rem;">Logout</a>
         </div>
     </nav>
 

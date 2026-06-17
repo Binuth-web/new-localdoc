@@ -34,7 +34,7 @@ if ((int)$user['is_active'] === 0) {
     // Account deactivated by admin — kill the session immediately
     session_unset();
     session_destroy();
-    echo json_encode(['status' => 'error', 'message' => 'Your account has been deactivated. Please contact support.']);
+    echo json_encode(['status' => 'error', 'message' => 'Your account has been deactivated.']);
     exit;
 }
 

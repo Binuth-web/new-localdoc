@@ -1,4 +1,6 @@
 <?php
+// Prevent db_connect from opening any session prematurely
+$_skipAutoSession = true;
 require 'db_connect.php';
 header('Content-Type: application/json');
 
@@ -23,7 +25,7 @@ session_start();
 
 // Clear any existing session to ensure a fresh login for the new user
 session_unset();
-session_regenerate_id(true);
+session_regenerate_id(false);
 
 $fullName = trim($firstName . ' ' . $lastName);
 

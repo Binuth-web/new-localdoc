@@ -409,7 +409,7 @@
     <main class="main-content">
         <div class="top-bar">
             <div><strong style="color: #334155; font-size: 1.1rem;" id="pageTitle">Analytics Overview</strong></div>
-            <a href="api/logout.php" class="btn btn-secondary"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+            <a href="api/logout.php?portal=admin" class="btn btn-secondary"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
         </div>
 
         <div class="content-area">
@@ -633,18 +633,32 @@
         let peakChartInst = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Verify admin session is still valid on every page load/refresh
-            fetch('api/check_session.php?portal=admin')
-                .then(r => r.json())
-                .then(res => {
-                    if (res.status !== 'success' || res.role !== 'admin') {
-                        window.location.href = 'admin_login.html';
-                        return;
-                    }
-                    loadCentersFilter();
-                    loadAnalytics();
-                })
-                .catch(() => { window.location.href = 'admin_login.html'; });
+            // Verify admin session on page load — retry once before giving up
+            function verifySession(isRetry) {
+                fetch('api/check_session.php?portal=admin', { credentials: 'same-origin' })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.status !== 'success' || res.role !== 'admin') {
+                            if (!isRetry) {
+                                // Wait 800ms and try once more before redirecting
+                                setTimeout(() => verifySession(true), 800);
+                            } else {
+                                window.location.href = 'admin_login.html';
+                            }
+                            return;
+                        }
+                        loadCentersFilter();
+                        loadAnalytics();
+                    })
+                    .catch(() => {
+                        if (!isRetry) {
+                            setTimeout(() => verifySession(true), 800);
+                        } else {
+                            window.location.href = 'admin_login.html';
+                        }
+                    });
+            }
+            verifySession(false);
         });
 
         // Tab Switching
@@ -671,7 +685,18 @@
 
         function handleAuthError(res) {
             if (res.status === 'error' && (res.message.includes('Unauthorized') || res.message.includes('Admin access'))) {
-                window.location.href = 'admin_login.html';
+                // Do NOT redirect — the session may still be valid.
+                // Re-verify the session silently; only redirect if truly logged out.
+                fetch('api/check_session.php?portal=admin', { credentials: 'same-origin' })
+                    .then(r => r.json())
+                    .then(check => {
+                        if (check.status !== 'success' || check.role !== 'admin') {
+                            window.location.href = 'admin_login.html';
+                        } else {
+                            showToast('Action failed: ' + res.message, true);
+                        }
+                    })
+                    .catch(() => { /* network issue — don't redirect */ });
                 return true;
             }
             return false;
@@ -688,7 +713,7 @@
 
         // --- Analytics ---
         function loadCentersFilter() {
-            fetch('api/admin_centers.php')
+            fetch('api/admin_centers.php?portal=admin')
                 .then(r => r.json())
                 .then(data => {
                     const sel = document.getElementById('analyticsCenterFilter');
@@ -704,7 +729,7 @@
             const date = document.getElementById('analyticsDate').value;
             const cid = document.getElementById('analyticsCenterFilter').value;
 
-            fetch(`api/admin_analytics.php?date=${date}&center_id=${cid}`)
+            fetch(`api/admin_analytics.php?date=${date}&center_id=${cid}&portal=admin`)
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
@@ -747,7 +772,7 @@
 
         // --- Centers ---
         function loadCenters() {
-            fetch('api/admin_centers.php')
+            fetch('api/admin_centers.php?portal=admin')
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
@@ -784,7 +809,7 @@
             if (type === 'booking') fd.append('enabled', val ? 1 : 0);
             else fd.append('available', val ? 1 : 0);
 
-            fetch('api/admin_centers.php', { method: 'POST', body: fd })
+            fetch('api/admin_centers.php?portal=admin', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(res => showToast(res.message, res.status !== 'success'));
         }
@@ -794,7 +819,7 @@
 
         function submitAddCenter(e) {
             e.preventDefault();
-            fetch('api/add_center.php', { method: 'POST', body: new FormData(e.target) })
+            fetch('api/add_center.php?portal=admin', { method: 'POST', body: new FormData(e.target) })
                 .then(r => r.json())
                 .then(res => {
                     showToast(res.message, res.status !== 'success');
@@ -805,7 +830,7 @@
         // --- Users ---
         function loadUsers() {
             // Load Patients
-            fetch('api/admin_users.php?role=patient')
+            fetch('api/admin_users.php?role=patient&portal=admin')
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
@@ -831,7 +856,7 @@
                 });
 
             // Load Staff
-            fetch('api/admin_users.php?role=staff')
+            fetch('api/admin_users.php?role=staff&portal=admin')
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
@@ -860,7 +885,7 @@
         function toggleUser(id, val) {
             const fd = new FormData();
             fd.append('id', id); fd.append('action', 'toggle_active'); fd.append('is_active', val ? 1 : 0);
-            fetch('api/admin_users.php', { method: 'POST', body: fd })
+            fetch('api/admin_users.php?portal=admin', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
@@ -869,7 +894,7 @@
         }
 
         function loadPendingStaff() {
-            fetch('api/get_pending_staff.php')
+            fetch('api/get_pending_staff.php?portal=admin')
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
@@ -898,7 +923,7 @@
         function approveStaff(id) {
             if (!confirm('Approve this staff member?')) return;
             const fd = new FormData(); fd.append('user_id', id);
-            fetch('api/approve_staff.php', { method: 'POST', body: fd })
+            fetch('api/approve_staff.php?portal=admin', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
@@ -910,7 +935,7 @@
         function rejectStaff(id) {
             if (!confirm('Reject and delete this staff registration?')) return;
             const fd = new FormData(); fd.append('user_id', id);
-            fetch('api/reject_staff.php', { method: 'POST', body: fd })
+            fetch('api/reject_staff.php?portal=admin', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
@@ -921,7 +946,7 @@
 
         // --- Sessions ---
         function loadSessions() {
-            fetch('api/admin_sessions.php')
+            fetch('api/admin_sessions.php?portal=admin')
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;

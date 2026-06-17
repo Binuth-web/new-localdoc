@@ -1,4 +1,7 @@
 <?php
+// Prevent db_connect from opening any session prematurely
+// We handle session switching manually below
+$_skipAutoSession = true;
 require 'db_connect.php';
 header('Content-Type: application/json');
 
@@ -41,7 +44,7 @@ if ($role === 'patient') {
 
     if ($nameMatch && $user) {
         if ((int)$user['is_active'] === 0) {
-            echo json_encode(['status' => 'error', 'message' => 'Your account has been deactivated. Please contact the clinic.']);
+            echo json_encode(['status' => 'error', 'message' => 'Your account has been deactivated.']);
             exit;
         }
         $portalCookie = 'patient';
@@ -51,9 +54,10 @@ if ($role === 'patient') {
         session_name('medconnect_' . $portalCookie);
         session_start();
 
-        // Clear old session to ensure a clean state
+        // Regenerate session ID for security but keep the old file intact
+        // so other portal sessions on the same browser are not destroyed
         session_unset();
-        session_regenerate_id(true);
+        session_regenerate_id(false);
 
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['role'] = $user['role'];
@@ -99,7 +103,7 @@ if ($role === 'patient') {
     if ($user && password_verify($password, $user['hashed_password'])) {
         // Block deactivated accounts before even creating a session
         if ((int)$user['is_active'] === 0) {
-            echo json_encode(['status' => 'error', 'message' => 'Your account has been deactivated. Please contact the administrator.']);
+            echo json_encode(['status' => 'error', 'message' => 'Your account has been deactivated.']);
             exit;
         }
 
@@ -111,9 +115,10 @@ if ($role === 'patient') {
         session_name('medconnect_' . $portalCookie);
         session_start();
 
-        // Clear old session to ensure a clean state
+        // Regenerate session ID for security but keep the old file intact
+        // so other portal sessions on the same browser are not destroyed
         session_unset();
-        session_regenerate_id(true);
+        session_regenerate_id(false);
 
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['role'] = $user['role'];

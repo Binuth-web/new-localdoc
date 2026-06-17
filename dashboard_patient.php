@@ -159,7 +159,7 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
             <span style="font-weight: 600; color: var(--primary);">My Appointments</span>
             <a href="profile.php">My Profile</a>
             <span style="font-weight: 600; margin-left: 1rem;">Hello, <?php echo htmlspecialchars($_SESSION['name']); ?></span>
-            <a href="api/logout.php" class="btn-outline" style="padding: 0.4rem 1rem; border-radius: 4px; text-decoration: none; margin-left: 1rem;">Logout</a>
+            <a href="api/logout.php?portal=patient" class="btn-outline" style="padding: 0.4rem 1rem; border-radius: 4px; text-decoration: none; margin-left: 1rem;">Logout</a>
         </div>
     </nav>
 
@@ -284,7 +284,7 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
             if (!confirm('Are you sure you want to cancel this booking?\nA new slot will open for other patients.')) return;
             const fd = new FormData();
             fd.append('token_id', tokenId);
-            fetch('api/cancel_token.php', { method: 'POST', body: fd })
+            fetch('api/cancel_token.php?portal=patient', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     showToast(data.message, data.status);
@@ -299,7 +299,7 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
             const fd = new FormData();
             fd.append('token_id', tokenId);
             fd.append('note', note);
-            fetch('api/request_late_token.php', { method: 'POST', body: fd })
+            fetch('api/request_late_token.php?portal=patient', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     showToast(data.message, data.status);
@@ -313,14 +313,14 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
         function dismissOne(notifId) {
             const fd = new FormData();
             fd.append('notification_id', notifId);
-            fetch('api/dismiss_notification.php', { method: 'POST', body: fd });
+            fetch('api/dismiss_notification.php?portal=patient', { method: 'POST', body: fd });
             const el = document.getElementById('notif-' + notifId);
             if (el) el.remove();
         }
 
         function dismissAll() {
             const fd = new FormData();
-            fetch('api/dismiss_notification.php', { method: 'POST', body: fd })
+            fetch('api/dismiss_notification.php?portal=patient', { method: 'POST', body: fd })
                 .then(() => {
                     document.getElementById('notifBanner').remove();
                 });

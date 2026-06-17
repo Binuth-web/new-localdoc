@@ -309,7 +309,7 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
             const fd = new FormData();
             fd.append('session_id', SESSION_ID);
             document.getElementById('btnStartSession').disabled = true;
-            fetch('api/start_session.php', { method: 'POST', body: fd })
+            fetch('api/start_session.php?portal=staff', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     showToast(data.message, data.status);
@@ -325,7 +325,7 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
             const fd = new FormData();
             fd.append('session_id', SESSION_ID);
             document.getElementById('btnCallNext').disabled = true;
-            fetch('api/call_next_token.php', { method: 'POST', body: fd })
+            fetch('api/call_next_token.php?portal=staff', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     document.getElementById('btnCallNext').disabled = false;
@@ -408,7 +408,7 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
         }
 
         function loadTokens() {
-            fetch(`api/session_tokens.php?session_id=${SESSION_ID}`)
+            fetch(`api/session_tokens.php?session_id=${SESSION_ID}&portal=staff`)
                 .then(r => r.json())
                 .then(data => {
                     if (data.status !== 'success') return;
@@ -440,7 +440,7 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
             const fd = new FormData();
             fd.append('token_id', tokenId);
             fd.append('action', action);
-            fetch('api/mark_attendance.php', { method: 'POST', body: fd })
+            fetch('api/mark_attendance.php?portal=staff', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     showToast(data.message, data.status);
@@ -452,7 +452,7 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
             if (!confirm('Approve this late token request?')) return;
             const fd = new FormData();
             fd.append('token_id', tokenId);
-            fetch('api/approve_late_token.php', { method: 'POST', body: fd })
+            fetch('api/approve_late_token.php?portal=staff', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     showToast(data.message, data.status);

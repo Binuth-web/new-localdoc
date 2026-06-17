@@ -165,7 +165,7 @@ $notifications = $notifStmt->fetchAll();
             <h1 style="color: var(--primary); margin: 0;"><i class="fa-solid fa-user-doctor"></i> Medical Staff Dashboard</h1>
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <span style="font-weight: 600;">Hello, <?php echo htmlspecialchars($_SESSION['name']); ?></span>
-                <a href="api/logout.php" class="btn-outline" style="text-decoration:none; padding: 0.5rem 1rem;">Logout</a>
+                <a href="api/logout.php?portal=staff" class="btn-outline" style="text-decoration:none; padding: 0.5rem 1rem;">Logout</a>
             </div>
         </div>
 
@@ -333,7 +333,7 @@ $notifications = $notifStmt->fetchAll();
     <script>
         function dismissAllStaffNotifs() {
             const fd = new FormData();
-            fetch('api/dismiss_notification.php', { method: 'POST', body: fd })
+            fetch('api/dismiss_notification.php?portal=staff', { method: 'POST', body: fd })
                 .then(() => {
                     const strip = document.getElementById('staffNotifStrip');
                     if(strip) strip.remove();
@@ -348,7 +348,7 @@ $notifications = $notifStmt->fetchAll();
             const fd = new FormData();
             fd.append('session_id', sessionId);
             fd.append('action', action);
-            fetch('api/update_session_status.php', { method: 'POST', body: fd })
+            fetch('api/update_session_status.php?portal=staff', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     if (data.status === 'success') location.reload();
@@ -385,7 +385,7 @@ $notifications = $notifStmt->fetchAll();
             fd.append('end_time',     document.getElementById('edit_end_time').value);
             fd.append('max_tokens',   document.getElementById('edit_max_tokens').value);
 
-            fetch('api/edit_session.php', { method: 'POST', body: fd })
+            fetch('api/edit_session.php?portal=staff', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     if (data.status === 'success') {

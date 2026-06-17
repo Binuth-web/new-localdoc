@@ -1,4 +1,5 @@
 <?php
+session_name('medconnect_staff');
 require 'db_connect.php';
 header('Content-Type: application/json');
 
