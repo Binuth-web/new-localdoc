@@ -1,11 +1,23 @@
 <?php
-session_start();
+session_name('medconnect_patient');
+require 'api/db_connect.php';
+require 'api/helpers.php';
+
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
     header('Location: login.html?role=patient&redirect=dashboard_patient.php');
     exit;
 }
-require 'api/db_connect.php';
-require 'api/helpers.php';
+
+// Live is_active check — admin may have deactivated the account after login
+$_activeCheck = $pdo->prepare('SELECT is_active FROM users WHERE id = ?');
+$_activeCheck->execute([$_SESSION['user_id']]);
+$_activeUser = $_activeCheck->fetch();
+if (!$_activeUser || (int)$_activeUser['is_active'] === 0) {
+    session_unset();
+    session_destroy();
+    header('Location: login.html?error=deactivated');
+    exit;
+}
 
 $appointments = [];
 if (hasOpdTables($pdo)) {
@@ -14,6 +26,7 @@ if (hasOpdTables($pdo)) {
                os.id AS session_id, os.opd_name AS specialization,
                COALESCE(os.doctor_name, os.opd_name, 'OPD') AS doctor_first,
                os.session_date AS date, os.start_time, os.end_time, os.status AS session_status,
+               os.doctor_started, os.calling_token,
                mc.name AS center_name, mc.address
         FROM opd_tokens ot
         JOIN opd_sessions os ON ot.session_id = os.id
@@ -85,6 +98,28 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
             font-weight: 600; cursor: pointer;
         }
         .btn-cancel:hover { background: #fca5a5; }
+        /* Live session indicator */
+        .live-session-bar {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white; border-radius: 8px;
+            padding: 0.55rem 1rem; margin-top: 0.75rem;
+            display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+        }
+        .live-dot {
+            width: 9px; height: 9px; border-radius: 50%;
+            background: #34d399; display: inline-block;
+            animation: pulse-dot 1.2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.4; transform: scale(0.7); }
+        }
+        .live-label { font-size: 0.75rem; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.05em; }
+        .live-token-num { font-size: 1.2rem; font-weight: 900; color: #34d399; letter-spacing: 0.08em; }
+        .your-token-pill {
+            background: rgba(255,255,255,0.12); font-size: 0.78rem;
+            padding: 0.2rem 0.6rem; border-radius: 12px; color: white;
+        }
         .apt-card {
             border: 1px solid #e2e8f0;
             border-radius: 10px;
@@ -197,6 +232,23 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
                                         </button>
                                     <?php endif; ?>
                                 </div>
+                                <?php if ($apt['doctor_started'] && $apt['session_status'] === 'active' && !in_array($apt['status'], ['cancelled', 'served'])): ?>
+                                <div class="live-session-bar">
+                                    <span class="live-dot"></span>
+                                    <div>
+                                        <div class="live-label">Session Live — Now Serving</div>
+                                        <div class="live-token-num">
+                                            <?php
+                                            $callingNum = (int)$apt['calling_token'];
+                                            echo $callingNum > 0
+                                                ? 'OPD-' . str_pad($callingNum, 3, '0', STR_PAD_LEFT)
+                                                : '—';
+                                            ?>
+                                        </div>
+                                    </div>
+                                    <span class="your-token-pill">Your Token: <?php echo htmlspecialchars(str_replace('OPD-','',$apt['token_number']??'')); ?></span>
+                                </div>
+                                <?php endif; ?>
                             </div>
                             <div>
                                 <span style="
@@ -241,9 +293,12 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
         }
 
         function requestLate(tokenId, notifId) {
-            if (!confirm('Request a late token?\nThe medical staff will be notified. They will decide if a late token can be given.')) return;
+            const note = prompt('Request a late token?\nYou can optionally add a note for the medical staff:');
+            if (note === null) return; // User cancelled
+            
             const fd = new FormData();
             fd.append('token_id', tokenId);
+            fd.append('note', note);
             fetch('api/request_late_token.php', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {

@@ -398,6 +398,7 @@
             </li>
             <li class="nav-item" onclick="switchTab('centers')"><i class="fa-solid fa-hospital"></i> Medical Centers
             </li>
+            <li class="nav-item" onclick="switchTab('add-center')"><i class="fa-solid fa-plus"></i> Add Center</li>
             <li class="nav-item" onclick="switchTab('users')"><i class="fa-solid fa-users"></i> Users & Staff</li>
             <li class="nav-item" onclick="switchTab('sessions')"><i class="fa-solid fa-calendar-check"></i> All Sessions
             </li>
@@ -477,7 +478,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3>Medical Centers</h3>
-                        <button class="btn btn-primary" onclick="openAddCenterModal()"><i class="fa-solid fa-plus"></i>
+                        <button class="btn btn-primary" onclick="switchTab('add-center')"><i class="fa-solid fa-plus"></i>
                             Add Center</button>
                     </div>
                     <table>
@@ -493,6 +494,41 @@
                         </thead>
                         <tbody id="centersTableBody"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Add Center View -->
+            <div id="view-add-center" class="view-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Add New Medical Center</h3>
+                    </div>
+                    <form id="addCenterForm" onsubmit="submitAddCenter(event)" style="max-width: 600px;">
+                        <div class="form-group">
+                            <label>Center Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div style="display:flex; gap:1rem;">
+                            <div class="form-group" style="flex:1;">
+                                <label>Type (e.g. Hospital)</label>
+                                <input type="text" name="type" class="form-control" required>
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label>Area / City</label>
+                                <input type="text" name="area" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="text" name="phone" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Full Address</label>
+                            <input type="text" name="address" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Add
+                            Center</button>
+                    </form>
                 </div>
             </div>
 
@@ -528,7 +564,10 @@
                         <thead>
                             <tr>
                                 <th>Full Name</th>
-                                <th>Phone</th>
+                                <th>Email Address</th>
+                                <th>NIC Number</th>
+                                <th>Date of Birth</th>
+                                <th>Contact Number</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -584,40 +623,6 @@
     </main>
 
     <!-- Modals -->
-    <div class="modal-overlay" id="addCenterModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Add Medical Center</h3>
-                <button class="btn-close" onclick="closeModal('addCenterModal')">&times;</button>
-            </div>
-            <form id="addCenterForm" onsubmit="submitAddCenter(event)">
-                <div class="form-group">
-                    <label>Center Name</label>
-                    <input type="text" name="name" class="form-control" required>
-                </div>
-                <div style="display:flex; gap:1rem;">
-                    <div class="form-group" style="flex:1;">
-                        <label>Type (e.g. Hospital)</label>
-                        <input type="text" name="type" class="form-control" required>
-                    </div>
-                    <div class="form-group" style="flex:1;">
-                        <label>Area / City</label>
-                        <input type="text" name="area" class="form-control" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Phone Number</label>
-                    <input type="text" name="phone" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Full Address</label>
-                    <input type="text" name="address" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Add
-                    Center</button>
-            </form>
-        </div>
-    </div>
 
     <div class="toast" id="toast"></div>
 
@@ -628,8 +633,18 @@
         let peakChartInst = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadCentersFilter();
-            loadAnalytics();
+            // Verify admin session is still valid on every page load/refresh
+            fetch('api/check_session.php?portal=admin')
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status !== 'success' || res.role !== 'admin') {
+                        window.location.href = 'admin_login.html';
+                        return;
+                    }
+                    loadCentersFilter();
+                    loadAnalytics();
+                })
+                .catch(() => { window.location.href = 'admin_login.html'; });
         });
 
         // Tab Switching
@@ -644,7 +659,8 @@
                 'analytics': 'Analytics Overview',
                 'centers': 'Manage Medical Centers',
                 'users': 'Manage Users & Staff',
-                'sessions': 'Session Overview'
+                'sessions': 'Session Overview',
+                'add-center': 'Add Medical Center'
             };
             document.getElementById('pageTitle').textContent = titles[tab];
 
@@ -782,7 +798,7 @@
                 .then(r => r.json())
                 .then(res => {
                     showToast(res.message, res.status !== 'success');
-                    if (res.status === 'success') { closeModal('addCenterModal'); e.target.reset(); loadCenters(); }
+                    if (res.status === 'success') { e.target.reset(); switchTab('centers'); }
                 });
         }
 
@@ -800,6 +816,9 @@
                         : res.data.map(u => `
                         <tr>
                             <td>${u.full_name}</td>
+                            <td>${u.email || '—'}</td>
+                            <td>${u.id_number || '—'}</td>
+                            <td>${u.date_of_birth || '—'}</td>
                             <td>${u.phone || '—'}</td>
                             <td>
                                 <label class="toggle-switch">

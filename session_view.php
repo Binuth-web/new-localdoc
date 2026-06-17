@@ -1,10 +1,11 @@
 <?php
-session_start();
+session_name('medconnect_staff');
+require 'api/db_connect.php';
+
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['staff', 'medical_staff', 'admin', 'doctor'])) {
-    header('Location: login.html');
+    header('Location: staff_login.html');
     exit;
 }
-require 'api/db_connect.php';
 
 $sessionId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$sessionId) {
@@ -157,6 +158,43 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
         .toast.show { transform: translateY(0); opacity: 1; }
         .toast.success { border-left: 4px solid #10b981; }
         .toast.error   { border-left: 4px solid #ef4444; }
+
+        /* Session control panel */
+        .session-control {
+            background: white; border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            padding: 1rem 1.25rem; margin-bottom: 1.5rem;
+            display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+        }
+        .btn-start-session {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; border: none; padding: 0.55rem 1.4rem;
+            border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+            cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+            display: flex; align-items: center; gap: 0.4rem;
+        }
+        .btn-start-session:hover { opacity: 0.88; transform: scale(0.98); }
+        .btn-start-session:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-call-next {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white; border: none; padding: 0.55rem 1.4rem;
+            border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+            cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+            display: flex; align-items: center; gap: 0.4rem;
+        }
+        .btn-call-next:hover { opacity: 0.88; transform: scale(0.98); }
+        .btn-call-next:disabled { opacity: 0.45; cursor: not-allowed; }
+        .calling-display {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white; border-radius: 10px;
+            padding: 0.5rem 1.2rem; display: flex; align-items: center; gap: 0.75rem;
+        }
+        .calling-display .label { font-size: 0.78rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.06em; }
+        .calling-display .token-num { font-size: 1.6rem; font-weight: 900; letter-spacing: 0.08em; color: #34d399; }
+        .session-started-badge {
+            background: #dcfce7; color: #166534; font-size: 0.78rem; font-weight: 700;
+            padding: 0.25rem 0.75rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;
+        }
     </style>
 </head>
 <body>
@@ -178,6 +216,26 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
     </div>
 
     <div class="page-body">
+
+        <!-- Session Control Panel -->
+        <div class="session-control" id="sessionControlPanel">
+            <button class="btn-start-session" id="btnStartSession" onclick="startSession()">
+                <i class="fa-solid fa-play"></i> Start Session
+            </button>
+            <button class="btn-call-next" id="btnCallNext" onclick="callNextToken()" style="display:none">
+                <i class="fa-solid fa-bell"></i> Call Next Token
+            </button>
+            <div class="calling-display" id="callingDisplay" style="display:none">
+                <div>
+                    <div class="label">Now Calling</div>
+                    <div class="token-num" id="callingTokenNum">—</div>
+                </div>
+                <div style="font-size:0.85rem; opacity:0.85;" id="callingPatientName"></div>
+            </div>
+            <div class="session-started-badge" id="sessionStartedBadge" style="display:none">
+                <i class="fa-solid fa-circle" style="color:#10b981; font-size:0.6rem;"></i> Session Live
+            </div>
+        </div>
 
         <!-- Legend -->
         <div class="legend">
@@ -219,6 +277,64 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
         const SESSION_ID = <?php echo $sessionId; ?>;
         let countdownVal = 30;
         let countdownInterval;
+        let sessionStarted = <?php echo $session['doctor_started'] ? 'true' : 'false'; ?>;
+
+        function updateControlPanel(doctorStarted, callingToken, callingName) {
+            sessionStarted = doctorStarted;
+            const btnStart  = document.getElementById('btnStartSession');
+            const btnCall   = document.getElementById('btnCallNext');
+            const display   = document.getElementById('callingDisplay');
+            const badge     = document.getElementById('sessionStartedBadge');
+            const numEl     = document.getElementById('callingTokenNum');
+            const nameEl    = document.getElementById('callingPatientName');
+
+            if (doctorStarted) {
+                btnStart.style.display  = 'none';
+                btnCall.style.display   = 'flex';
+                badge.style.display     = 'inline-flex';
+                if (callingToken > 0) {
+                    display.style.display = 'flex';
+                    numEl.textContent  = 'OPD-' + String(callingToken).padStart(3, '0');
+                    nameEl.textContent = callingName || '';
+                }
+            } else {
+                btnStart.style.display = 'flex';
+                btnCall.style.display  = 'none';
+                badge.style.display    = 'none';
+            }
+        }
+
+        function startSession() {
+            if (!confirm('Start this doctor session? All token holders will be notified.')) return;
+            const fd = new FormData();
+            fd.append('session_id', SESSION_ID);
+            document.getElementById('btnStartSession').disabled = true;
+            fetch('api/start_session.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    showToast(data.message, data.status);
+                    if (data.status === 'success') {
+                        updateControlPanel(true, 0, '');
+                    } else {
+                        document.getElementById('btnStartSession').disabled = false;
+                    }
+                });
+        }
+
+        function callNextToken() {
+            const fd = new FormData();
+            fd.append('session_id', SESSION_ID);
+            document.getElementById('btnCallNext').disabled = true;
+            fetch('api/call_next_token.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('btnCallNext').disabled = false;
+                    showToast(data.message, data.status);
+                    if (data.status === 'success') {
+                        updateControlPanel(true, data.calling_token, data.patient_name);
+                    }
+                });
+        }
 
         function startCountdown() {
             clearInterval(countdownInterval);
@@ -276,11 +392,17 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
                     </div>`;
             }
 
+            let notesHtml = '';
+            if (slot.notes) {
+                notesHtml = `<div style="font-size: 0.75rem; color: #475569; margin-top: 4px; margin-bottom: 4px; padding: 4px; background: #f1f5f9; border-radius: 4px; font-style: italic;">"${slot.notes}"</div>`;
+            }
+
             return `
                 <div class="token-card ${cfg.card}" id="card-${slot.token_id || 'e' + slot.slot}">
                     <div class="token-number">${numLabel}</div>
                     <div class="token-name">${slot.patient_name || '—'}</div>
                     <div><span class="status-badge ${cfg.badge}">${cfg.label}</span></div>
+                    ${notesHtml}
                     ${actionsHtml}
                 </div>`;
         }
@@ -292,6 +414,9 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
                     if (data.status !== 'success') return;
 
                     document.getElementById('maxTokensCount').textContent = data.session.max_tokens;
+
+                    // Update control panel from latest server state
+                    updateControlPanel(data.doctor_started, data.calling_token, null);
 
                     const regular = data.slots.filter(s => s.slot !== 'LATE');
                     const late    = data.slots.filter(s => s.slot === 'LATE');

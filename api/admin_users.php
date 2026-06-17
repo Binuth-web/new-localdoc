@@ -12,7 +12,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'GET') {
     $role = $_GET['role'] ?? 'all';
     
-    $query = "SELECT u.id, u.full_name, u.email, u.phone, u.role, u.is_active, c.name as center_name 
+    $query = "SELECT u.id, u.full_name, u.email, u.id_number, u.date_of_birth, u.phone, u.role, u.is_active, c.name as center_name 
               FROM users u 
               LEFT JOIN medical_centers c ON u.center_id = c.id";
     

@@ -1,5 +1,7 @@
 <?php
-session_start();
+session_name('medconnect_patient');
+require 'api/db_connect.php';
+
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
     header("Location: login.html?role=patient");
     exit;

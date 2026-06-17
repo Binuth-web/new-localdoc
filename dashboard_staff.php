@@ -1,7 +1,19 @@
 <?php
+session_name('medconnect_staff');
 require 'api/db_connect.php';
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['staff', 'medical_staff', 'admin', 'doctor'])) {
-    header('Location: login.html');
+    header('Location: staff_login.html');
+    exit;
+}
+
+// Live is_active check — admin may have deactivated the account after login
+$_activeCheck = $pdo->prepare('SELECT is_active FROM users WHERE id = ?');
+$_activeCheck->execute([$_SESSION['user_id']]);
+$_activeUser = $_activeCheck->fetch();
+if (!$_activeUser || (int)$_activeUser['is_active'] === 0) {
+    session_unset();
+    session_destroy();
+    header('Location: staff_login.html?error=deactivated');
     exit;
 }
 require 'api/helpers.php';

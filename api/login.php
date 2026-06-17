@@ -15,20 +15,46 @@ if ($role !== $portal && !($role === 'medical_staff' && $portal === 'staff')) {
 }
 
 if ($role === 'patient') {
-    // Patient login uses First Name and ID Number
+    // Patient login uses First Name, Last Name, and ID Number
     $firstName = trim((string) ($_POST['first_name'] ?? ''));
+    $lastName = trim((string) ($_POST['last_name'] ?? ''));
     $idNumber = trim((string) ($_POST['id_number'] ?? ''));
 
-    if (!$firstName || !$idNumber) {
-        echo json_encode(['status' => 'error', 'message' => 'First Name and NIC Number are required.']);
+    if (!$firstName || !$lastName || !$idNumber) {
+        echo json_encode(['status' => 'error', 'message' => 'First Name, Last Name, and NIC Number are required.']);
         exit;
     }
+    
+    $expectedFullName = trim($firstName . ' ' . $lastName);
 
-    $stmt = $pdo->prepare('SELECT id, full_name, role, center_id FROM users WHERE id_number = ? AND full_name LIKE ? AND role = "patient"');
-    $stmt->execute([$idNumber, $firstName . '%']);
+    $stmt = $pdo->prepare('SELECT id, full_name, role, center_id, is_active FROM users WHERE id_number = ? AND role = "patient"');
+    $stmt->execute([$idNumber]);
     $user = $stmt->fetch();
 
+    // Verify full name matches exactly (case-insensitive)
+    $nameMatch = false;
     if ($user) {
+        if (strcasecmp($user['full_name'], $expectedFullName) === 0) {
+            $nameMatch = true;
+        }
+    }
+
+    if ($nameMatch && $user) {
+        if ((int)$user['is_active'] === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Your account has been deactivated. Please contact the clinic.']);
+            exit;
+        }
+        $portalCookie = 'patient';
+        setcookie('medconnect_portal', $portalCookie, time() + (86400 * 30), "/");
+
+        session_write_close();
+        session_name('medconnect_' . $portalCookie);
+        session_start();
+
+        // Clear old session to ensure a clean state
+        session_unset();
+        session_regenerate_id(true);
+
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['name'] = $user['full_name'];
@@ -36,10 +62,10 @@ if ($role === 'patient') {
             $_SESSION['center_id'] = $user['center_id'];
         }
 
-        $redirect = 'dashboard_patient.php';
+        $redirect = 'index.html#centers-section';
         $redirectParam = $_POST['redirect'] ?? $_GET['redirect'] ?? '';
-        if ($redirectParam === 'book_appointment.html' && isset($_POST['center'])) {
-            $redirect = 'book_appointment.html?center=' . urlencode($_POST['center']);
+        if ($redirectParam === 'index.html' && isset($_POST['center'])) {
+            $redirect = 'index.html?center=' . urlencode($_POST['center']);
         } elseif (!empty($redirectParam)) {
             $redirect = $redirectParam;
         }
@@ -71,10 +97,23 @@ if ($role === 'patient') {
     $user = $stmt->fetch();
 
     if ($user && password_verify($password, $user['hashed_password'])) {
-        if ($user['role'] === 'staff' && (int)$user['is_active'] === 0) {
-            echo json_encode(['status' => 'error', 'message' => 'Your account is not yet approved. Please wait for admin approval.']);
+        // Block deactivated accounts before even creating a session
+        if ((int)$user['is_active'] === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Your account has been deactivated. Please contact the administrator.']);
             exit;
         }
+
+        // Set a cookie to track the portal so sessions don't conflict
+        $portalCookie = 'staff';
+        setcookie('medconnect_portal', $portalCookie, time() + (86400 * 30), "/");
+
+        session_write_close();
+        session_name('medconnect_' . $portalCookie);
+        session_start();
+
+        // Clear old session to ensure a clean state
+        session_unset();
+        session_regenerate_id(true);
 
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['role'] = $user['role'];

@@ -42,7 +42,8 @@ if ($token['session_status'] !== 'active') {
 }
 
 // Change status to late_request and track it
-$pdo->prepare("UPDATE opd_tokens SET status = 'late_request', was_late_request = 1 WHERE id = ?")->execute([$tokenId]);
+$note = trim($_POST['note'] ?? '');
+$pdo->prepare("UPDATE opd_tokens SET status = 'late_request', was_late_request = 1, notes = ? WHERE id = ?")->execute([$note, $tokenId]);
 
 // Notify all staff of this center — DB role enum value is 'staff'
 $staffStmt = $pdo->prepare("SELECT id FROM users WHERE role = 'staff' AND center_id = ? AND is_active = 1");

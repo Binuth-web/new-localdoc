@@ -1,8 +1,11 @@
 <?php
+session_name('medconnect_staff');
 require 'db_connect.php';
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { exit; }
+
+file_put_contents(__DIR__ . '/../debug_all.log', date('Y-m-d H:i:s') . " - mark_attendance\n" . print_r($_SESSION, true) . "\nCookie: " . print_r($_COOKIE, true) . "\n", FILE_APPEND);
 
 // Accept both 'staff' (DB value) and 'medical_staff' (legacy session value)
 $role = $_SESSION['role'] ?? '';

@@ -1,4 +1,9 @@
 <?php
+if (session_name() === 'PHPSESSID') {
+    $portal = $_COOKIE['medconnect_portal'] ?? 'default';
+    session_name('medconnect_' . $portal);
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

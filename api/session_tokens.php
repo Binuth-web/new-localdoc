@@ -61,6 +61,7 @@ for ($i = 1; $i <= $maxSlots; $i++) {
             'status' => $displayStatus,
             'db_status' => $t['status'],
             'attendance_marked' => (bool)$t['attendance_marked'],
+            'notes' => $t['notes'],
         ];
     } else {
         $slots[] = [
@@ -90,12 +91,15 @@ foreach ($lateRequests as $lr) {
         'status' => 'late_request',
         'db_status' => 'late_request',
         'attendance_marked' => false,
+        'notes' => $lr['notes'],
     ];
 }
 
 echo json_encode([
-    'status' => 'success',
+    'status'  => 'success',
     'session' => $session,
-    'slots' => $slots,
+    'doctor_started' => (bool)$session['doctor_started'],
+    'calling_token'  => (int)$session['calling_token'],
+    'slots'   => $slots,
 ]);
 ?>
