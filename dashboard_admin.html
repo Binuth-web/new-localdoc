@@ -726,6 +726,7 @@
                                 <th>Date of Birth</th>
                                 <th>Contact Number</th>
                                 <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="registeredPatientsTableBody"></tbody>
@@ -744,6 +745,7 @@
                                 <th>Auto-Generated Email</th>
                                 <th>Contact Number</th>
                                 <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="walkinPatientsTableBody"></tbody>
@@ -788,6 +790,7 @@
                                 <th>Center</th>
                                 <th>Password</th>
                                 <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="staffTableBody"></tbody>
@@ -1089,7 +1092,7 @@
                     document.getElementById('walkinPatientCount').textContent = walkin.length;
                     
                     registeredTb.innerHTML = registered.length === 0
-                        ? '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No registered patients found.</td></tr>'
+                        ? '<tr><td colspan="7" style="text-align:center; color:#94a3b8;">No registered patients found.</td></tr>'
                         : registered.map(u => `
                         <tr>
                             <td>${u.full_name}</td>
@@ -1103,11 +1106,16 @@
                                     <span class="slider"></span>
                                 </label>
                             </td>
+                            <td>
+                                <button onclick="deleteUser(${u.id})" class="btn btn-sm" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; font-size:0.8rem; padding:0.35rem 0.7rem;" title="Delete Patient">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
                         </tr>
                     `).join('');
 
                     walkinTb.innerHTML = walkin.length === 0
-                        ? '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">No walk-in patients found.</td></tr>'
+                        ? '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No walk-in patients found.</td></tr>'
                         : walkin.map(u => `
                         <tr>
                             <td>${u.full_name}</td>
@@ -1118,6 +1126,11 @@
                                     <input type="checkbox" ${u.is_active == 1 ? 'checked' : ''} onchange="toggleUser(${u.id}, this.checked)">
                                     <span class="slider"></span>
                                 </label>
+                            </td>
+                            <td>
+                                <button onclick="deleteUser(${u.id})" class="btn btn-sm" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; font-size:0.8rem; padding:0.35rem 0.7rem;" title="Delete Walk-in Patient">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                     `).join('');
@@ -1132,7 +1145,7 @@
                     const tb = document.getElementById('staffTableBody');
                     document.getElementById('staffCount').textContent = res.data.length;
                     tb.innerHTML = res.data.length === 0
-                        ? '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No staff found.</td></tr>'
+                        ? '<tr><td colspan="7" style="text-align:center; color:#94a3b8;">No staff found.</td></tr>'
                         : res.data.map(u => `
                         <tr>
                             <td>${u.full_name}</td>
@@ -1145,6 +1158,11 @@
                                     <input type="checkbox" ${u.is_active == 1 ? 'checked' : ''} onchange="toggleUser(${u.id}, this.checked)">
                                     <span class="slider"></span>
                                 </label>
+                            </td>
+                            <td>
+                                <button onclick="deleteUser(${u.id})" class="btn btn-sm" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; font-size:0.8rem; padding:0.35rem 0.7rem;" title="Delete Staff">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                     `).join('');
@@ -1160,6 +1178,45 @@
                     if (handleAuthError(res)) return;
                     showToast(res.message, res.status !== 'success');
                 });
+        }
+
+        function deleteUser(userId) {
+            if (!confirm('⚠️ Are you sure you want to PERMANENTLY DELETE this account?\n\nThis will also delete all their appointments, tokens, and notifications.\n\nThis action CANNOT be undone!')) return;
+            fetch('api/admin_delete_user.php?portal=admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (handleAuthError(res)) return;
+                showToast(res.message, res.status !== 'success');
+                if (res.status === 'success') {
+                    loadPatients();
+                    loadStaff();
+                    loadAnalytics();
+                }
+            })
+            .catch(() => showToast('Network error. Please try again.', true));
+        }
+
+        function deleteSession(sessionId) {
+            if (!confirm('⚠️ Are you sure you want to PERMANENTLY DELETE this session?\n\nThis will also delete all tokens/appointments booked for this session.\n\nThis action CANNOT be undone!')) return;
+            fetch('api/admin_delete_session.php?portal=admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (handleAuthError(res)) return;
+                showToast(res.message, res.status !== 'success');
+                if (res.status === 'success') {
+                    loadSessions();
+                    loadAnalytics();
+                }
+            })
+            .catch(() => showToast('Network error. Please try again.', true));
         }
 
         function loadPendingStaff() {
@@ -1245,8 +1302,11 @@
                             <td>Dr. ${s.doctor_name}</td>
                             <td>${s.start_time.substring(0, 5)} - ${s.end_time.substring(0, 5)}</td>
                             <td><span style="color:${statusColor}; font-weight:600; text-transform:uppercase; font-size:0.8rem;">${s.status}</span></td>
-                            <td>
+                            <td style="display:flex; gap:0.5rem; align-items:center;">
                                 <a href="session_view.php?id=${s.id}" target="_blank" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye"></i> View Queue</a>
+                                <button onclick="deleteSession(${s.id})" class="btn btn-sm" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; font-size:0.8rem; padding:0.35rem 0.7rem;" title="Delete Session">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                         `;
