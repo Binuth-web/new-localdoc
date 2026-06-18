@@ -61,7 +61,7 @@ try {
 
     $stmt = $pdo->prepare(
         "SELECT id FROM opd_tokens
-         WHERE patient_id = ? AND session_id = ? AND status NOT IN ('cancelled', 'no-show')"
+         WHERE patient_id = ? AND session_id = ? AND status NOT IN ('cancelled', 'no-show', 'served', 'called')"
     );
     $stmt->execute([$_SESSION['user_id'], $sessionId]);
     if ($stmt->fetch()) {

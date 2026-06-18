@@ -7,7 +7,9 @@
     <title>Platform Admin Dashboard | MedConnect</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -383,6 +385,157 @@
             cursor: pointer;
             color: #94a3b8;
         }
+
+        /* --- Global Search --- */
+        .global-search-wrap {
+            position: relative;
+            flex: 1;
+            max-width: 480px;
+            margin: 0 2rem;
+        }
+        .global-search-input {
+            width: 100%;
+            padding: 0.6rem 1rem 0.6rem 2.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            color: #1e293b;
+            background: #f8fafc;
+            transition: all 0.25s ease;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .global-search-input:focus {
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        .global-search-input::placeholder { color: #94a3b8; }
+        .search-icon {
+            position: absolute;
+            left: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 0.9rem;
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+        .global-search-wrap:focus-within .search-icon { color: #3b82f6; }
+        .search-shortcut {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #e2e8f0;
+            color: #64748b;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.15rem 0.5rem;
+            border-radius: 5px;
+            letter-spacing: 0.03em;
+            pointer-events: none;
+        }
+        .search-results-overlay {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 60px -10px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05);
+            z-index: 1000;
+            max-height: 520px;
+            overflow-y: auto;
+            display: none;
+            border: 1px solid #e2e8f0;
+        }
+        .search-results-overlay.visible { display: block; animation: searchSlideIn 0.2s ease; }
+        @keyframes searchSlideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .search-results-header {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-results-header span {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .search-category-label {
+            padding: 0.6rem 1.25rem 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #64748b;
+            border-top: 1px solid #f1f5f9;
+        }
+        .search-category-label:first-child { border-top: none; }
+        .search-category-label i {
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; color: white;
+        }
+        .search-result-item {
+            padding: 0.7rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .search-result-item:hover { background: #f8fafc; }
+        .search-result-item:last-child { border-radius: 0 0 16px 16px; }
+        .search-result-info { flex: 1; min-width: 0; }
+        .search-result-info .sr-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .search-result-info .sr-subtitle {
+            font-size: 0.78rem;
+            color: #64748b;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-top: 1px;
+        }
+        .sr-badge {
+            font-size: 0.7rem; font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            color: white;
+        }
+        .sr-meta {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+        .search-empty {
+            padding: 2.5rem 1.25rem;
+            text-align: center;
+            color: #94a3b8;
+        }
+        .search-empty i { font-size: 2rem; margin-bottom: 0.5rem; display: block; opacity: 0.4; }
+        .search-loading {
+            padding: 2rem; text-align: center; color: #94a3b8;
+        }
+        .search-loading i { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 
@@ -399,7 +552,8 @@
             <li class="nav-item" onclick="switchTab('centers')"><i class="fa-solid fa-hospital"></i> Medical Centers
             </li>
             <li class="nav-item" onclick="switchTab('add-center')"><i class="fa-solid fa-plus"></i> Add Center</li>
-            <li class="nav-item" onclick="switchTab('users')"><i class="fa-solid fa-users"></i> Users & Staff</li>
+            <li class="nav-item" onclick="switchTab('patients')"><i class="fa-solid fa-user"></i> Patients</li>
+            <li class="nav-item" onclick="switchTab('staff')"><i class="fa-solid fa-user-nurse"></i> Medical Staff</li>
             <li class="nav-item" onclick="switchTab('sessions')"><i class="fa-solid fa-calendar-check"></i> All Sessions
             </li>
         </ul>
@@ -409,6 +563,14 @@
     <main class="main-content">
         <div class="top-bar">
             <div><strong style="color: #334155; font-size: 1.1rem;" id="pageTitle">Analytics Overview</strong></div>
+            <div class="global-search-wrap">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" class="global-search-input" id="globalSearchInput" 
+                    placeholder="Search patients, staff, sessions, centers..." 
+                    autocomplete="off" spellcheck="false">
+                <span class="search-shortcut">Ctrl+K</span>
+                <div class="search-results-overlay" id="searchResultsOverlay"></div>
+            </div>
             <a href="api/logout.php?portal=admin" class="btn btn-secondary"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
         </div>
 
@@ -432,42 +594,36 @@
                     </div>
                 </div>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon blue"><i class="fa-solid fa-clipboard-list"></i></div>
-                        <div class="stat-info">
-                            <h3 id="statTotalSessions">0</h3>
-                            <p>Total Sessions</p>
-                        </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <!-- Total Sessions -->
+                    <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 12px; padding: 1.5rem; color: white; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25); transition: transform 0.2s;">
+                        <i class="fa-solid fa-clipboard-list" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg);"></i>
+                        <p style="margin:0 0 0.25rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; font-weight: 600;">Total Sessions</p>
+                        <h3 id="statTotalSessions" style="margin:0; font-size: 2.2rem; font-weight: 800;">0</h3>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon green"><i class="fa-solid fa-check-double"></i></div>
-                        <div class="stat-info">
-                            <h3 id="statAttendance">0%</h3>
-                            <p>Attendance Rate</p>
-                        </div>
+                    <!-- Attendance Rate -->
+                    <div style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; padding: 1.5rem; color: white; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25); transition: transform 0.2s;">
+                        <i class="fa-solid fa-check-double" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg);"></i>
+                        <p style="margin:0 0 0.25rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; font-weight: 600;">Attendance Rate</p>
+                        <h3 id="statAttendance" style="margin:0; font-size: 2.2rem; font-weight: 800;">0%</h3>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon orange"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                        <div class="stat-info">
-                            <h3 id="statLate">0</h3>
-                            <p>Late Requests</p>
-                        </div>
+                    <!-- Late Requests -->
+                    <div style="background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 12px; padding: 1.5rem; color: white; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25); transition: transform 0.2s;">
+                        <i class="fa-solid fa-clock-rotate-left" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg);"></i>
+                        <p style="margin:0 0 0.25rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; font-weight: 600;">Late Requests</p>
+                        <h3 id="statLate" style="margin:0; font-size: 2.2rem; font-weight: 800;">0</h3>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon red"><i class="fa-solid fa-ban"></i></div>
-                        <div class="stat-info">
-                            <h3 id="statCancellation">0%</h3>
-                            <p>Cancellation Rate</p>
-                        </div>
+                    <!-- Cancellation Rate -->
+                    <div style="background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 12px; padding: 1.5rem; color: white; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25); transition: transform 0.2s;">
+                        <i class="fa-solid fa-ban" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg);"></i>
+                        <p style="margin:0 0 0.25rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; font-weight: 600;">Cancellation Rate</p>
+                        <h3 id="statCancellation" style="margin:0; font-size: 2.2rem; font-weight: 800;">0%</h3>
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Token Status Breakdown</h3>
-                    </div>
-                    <div style="position: relative; height: 250px; width: 100%;">
+                <div style="background: #f8fafc; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center;">
+                    <h4 style="margin: 0 0 1rem 0; color: #475569; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em;">Token Status Breakdown</h4>
+                    <div style="position: relative; height: 260px; width: 100%;">
                         <canvas id="tokenChart"></canvas>
                     </div>
                 </div>
@@ -499,41 +655,104 @@
 
             <!-- Add Center View -->
             <div id="view-add-center" class="view-section">
-                <div class="card">
+                <div class="card" style="max-width: 780px;">
                     <div class="card-header">
-                        <h3>Add New Medical Center</h3>
+                        <h3><i class="fa-solid fa-hospital-user" style="color: var(--primary);"></i> Add New Medical Center</h3>
                     </div>
-                    <form id="addCenterForm" onsubmit="submitAddCenter(event)" style="max-width: 600px;">
+                    <form id="addCenterForm" onsubmit="submitAddCenter(event)">
                         <div class="form-group">
                             <label>Center Name</label>
-                            <input type="text" name="name" class="form-control" required>
+                            <input type="text" name="name" class="form-control" required placeholder="e.g. Kandy General Hospital">
                         </div>
                         <div style="display:flex; gap:1rem;">
                             <div class="form-group" style="flex:1;">
                                 <label>Type (e.g. Hospital)</label>
-                                <input type="text" name="type" class="form-control" required>
+                                <input type="text" name="type" class="form-control" required placeholder="Hospital / Clinic">
                             </div>
                             <div class="form-group" style="flex:1;">
                                 <label>Area / City</label>
-                                <input type="text" name="area" class="form-control" required>
+                                <input type="text" name="area" class="form-control" required placeholder="e.g. Kandy">
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Phone Number</label>
-                            <input type="text" name="phone" class="form-control" required>
+                            <input type="text" name="phone" class="form-control" required placeholder="+94 XX XXX XXXX">
                         </div>
                         <div class="form-group">
                             <label>Full Address</label>
-                            <input type="text" name="address" class="form-control" required>
+                            <input type="text" name="address" id="centerAddress" class="form-control" required placeholder="Street, City">
                         </div>
-                        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Add
-                            Center</button>
+
+                        <!-- Map Location Picker -->
+                        <div class="form-group">
+                            <label style="display:flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fa-solid fa-map-location-dot" style="color: #10b981;"></i> Map Location <span style="color: #ef4444; font-size: 0.8rem; font-weight: 400;">*</span></span>
+                                <button type="button" onclick="searchAddressOnMap()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.3rem 0.75rem;">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Find from Address
+                                </button>
+                            </label>
+                            <p style="font-size: 0.8rem; color: #64748b; margin: 0 0 0.6rem;"><i class="fa-solid fa-circle-info"></i> Click on the map to set the exact pin location, or use the button above to search by address.</p>
+                            <div id="adminMapPicker" style="height: 320px; border-radius: 10px; border: 2px solid #e2e8f0; overflow: hidden;"></div>
+                            <div id="mapCoordDisplay" style="display:none; margin-top: 0.5rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.82rem; color: #166534;">
+                                <i class="fa-solid fa-check-circle"></i> Location set: <strong id="coordText"></strong>
+                            </div>
+                            <div id="mapCoordWarning" style="margin-top: 0.5rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.82rem; color: #c2410c;">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Please click on the map to set the center location before submitting.
+                            </div>
+                            <input type="hidden" name="lat" id="centerLat">
+                            <input type="hidden" name="lng" id="centerLng">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding: 0.75rem;">
+                            <i class="fa-solid fa-plus"></i> Add Medical Center
+                        </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Users View -->
-            <div id="view-users" class="view-section">
+            <!-- Patients View -->
+            <div id="view-patients" class="view-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-user" style="color:#3b82f6;"></i> Registered Patients</h3>
+                        <span id="registeredPatientCount" style="background:#dbeafe; color:#1d4ed8; padding:4px 12px; border-radius:12px; font-size:0.8rem; font-weight:600;">0</span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Full Name</th>
+                                <th>Email Address</th>
+                                <th>NIC Number</th>
+                                <th>Date of Birth</th>
+                                <th>Contact Number</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="registeredPatientsTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="card" style="margin-top: 2rem;">
+                    <div class="card-header">
+                        <h3 style="color: #64748b;"><i class="fa-solid fa-person-walking"></i> Walk-in Patients</h3>
+                        <span id="walkinPatientCount" style="background:#e2e8f0; color:#475569; padding:4px 12px; border-radius:12px; font-size:0.8rem; font-weight:600;">0</span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th>Full Name</th>
+                                <th>Auto-Generated Email</th>
+                                <th>Contact Number</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="walkinPatientsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Staff View -->
+            <div id="view-staff" class="view-section">
                 <!-- Pending Staff Approvals -->
                 <div class="card" id="pendingStaffCard"
                     style="display: none; border-left: 4px solid #f59e0b; background: #fffbeb;">
@@ -551,27 +770,6 @@
                             </tr>
                         </thead>
                         <tbody id="pendingStaffTableBody"></tbody>
-                    </table>
-                </div>
-
-                <!-- Patients Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3><i class="fa-solid fa-user" style="color:#3b82f6;"></i> Patients</h3>
-                        <span id="patientCount" style="background:#dbeafe; color:#1d4ed8; padding:4px 12px; border-radius:12px; font-size:0.8rem; font-weight:600;">0</span>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Full Name</th>
-                                <th>Email Address</th>
-                                <th>NIC Number</th>
-                                <th>Date of Birth</th>
-                                <th>Contact Number</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="patientsTableBody"></tbody>
                     </table>
                 </div>
 
@@ -601,7 +799,7 @@
             <div id="view-sessions" class="view-section">
                 <div class="card">
                     <div class="card-header">
-                        <h3>All Sessions</h3>
+                        <h3>Active Sessions</h3>
                     </div>
                     <table>
                         <thead>
@@ -615,6 +813,25 @@
                             </tr>
                         </thead>
                         <tbody id="sessionsTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="card" id="completedSessionsCard" style="display:none; opacity: 0.85;">
+                    <div class="card-header">
+                        <h3 style="color: #64748b;"><i class="fa-solid fa-check-circle"></i> Completed Sessions</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th>Date</th>
+                                <th>Center</th>
+                                <th>Doctor</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Queue Access</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completedSessionsTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -672,15 +889,18 @@
             const titles = {
                 'analytics': 'Analytics Overview',
                 'centers': 'Manage Medical Centers',
-                'users': 'Manage Users & Staff',
+                'patients': 'Manage Patients',
+                'staff': 'Manage Medical Staff',
                 'sessions': 'Session Overview',
                 'add-center': 'Add Medical Center'
             };
             document.getElementById('pageTitle').textContent = titles[tab];
 
             if (tab === 'centers') loadCenters();
-            if (tab === 'users') { loadUsers(); loadPendingStaff(); }
+            if (tab === 'patients') loadPatients();
+            if (tab === 'staff') { loadStaff(); loadPendingStaff(); }
             if (tab === 'sessions') loadSessions();
+            if (tab === 'add-center') initAdminMap();
         }
 
         function handleAuthError(res) {
@@ -819,26 +1039,58 @@
 
         function submitAddCenter(e) {
             e.preventDefault();
+            const lat = document.getElementById('centerLat').value;
+            const lng = document.getElementById('centerLng').value;
+            if (!lat || !lng) {
+                document.getElementById('mapCoordWarning').style.display = 'block';
+                document.getElementById('adminMapPicker').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
             fetch('api/add_center.php?portal=admin', { method: 'POST', body: new FormData(e.target) })
                 .then(r => r.json())
                 .then(res => {
                     showToast(res.message, res.status !== 'success');
-                    if (res.status === 'success') { e.target.reset(); switchTab('centers'); }
+                    if (res.status === 'success') {
+                        e.target.reset();
+                        document.getElementById('centerLat').value = '';
+                        document.getElementById('centerLng').value = '';
+                        document.getElementById('mapCoordDisplay').style.display = 'none';
+                        document.getElementById('mapCoordWarning').style.display = 'block';
+                        if (window._adminMapMarker) {
+                            window._adminMap.removeLayer(window._adminMapMarker);
+                            window._adminMapMarker = null;
+                        }
+                        switchTab('centers');
+                    }
                 });
         }
 
         // --- Users ---
-        function loadUsers() {
-            // Load Patients
+        function loadPatients() {
             fetch('api/admin_users.php?role=patient&portal=admin')
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
-                    const tb = document.getElementById('patientsTableBody');
-                    document.getElementById('patientCount').textContent = res.data.length;
-                    tb.innerHTML = res.data.length === 0
-                        ? '<tr><td colspan="3" style="text-align:center; color:#94a3b8;">No patients found.</td></tr>'
-                        : res.data.map(u => `
+                    const registeredTb = document.getElementById('registeredPatientsTableBody');
+                    const walkinTb = document.getElementById('walkinPatientsTableBody');
+                    
+                    const registered = [];
+                    const walkin = [];
+                    
+                    res.data.forEach(u => {
+                        if (u.email && u.email.includes('@medconnect.local')) {
+                            walkin.push(u);
+                        } else {
+                            registered.push(u);
+                        }
+                    });
+                    
+                    document.getElementById('registeredPatientCount').textContent = registered.length;
+                    document.getElementById('walkinPatientCount').textContent = walkin.length;
+                    
+                    registeredTb.innerHTML = registered.length === 0
+                        ? '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No registered patients found.</td></tr>'
+                        : registered.map(u => `
                         <tr>
                             <td>${u.full_name}</td>
                             <td>${u.email || '—'}</td>
@@ -853,9 +1105,26 @@
                             </td>
                         </tr>
                     `).join('');
-                });
 
-            // Load Staff
+                    walkinTb.innerHTML = walkin.length === 0
+                        ? '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">No walk-in patients found.</td></tr>'
+                        : walkin.map(u => `
+                        <tr>
+                            <td>${u.full_name}</td>
+                            <td style="color: #94a3b8; font-size: 0.85rem;">${u.email || '—'}</td>
+                            <td>${u.phone || '—'}</td>
+                            <td>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" ${u.is_active == 1 ? 'checked' : ''} onchange="toggleUser(${u.id}, this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                        </tr>
+                    `).join('');
+                });
+        }
+
+        function loadStaff() {
             fetch('api/admin_users.php?role=staff&portal=admin')
                 .then(r => r.json())
                 .then(res => {
@@ -928,7 +1197,7 @@
                 .then(res => {
                     if (handleAuthError(res)) return;
                     showToast(res.message, res.status !== 'success');
-                    if (res.status === 'success') { loadPendingStaff(); loadUsers(); }
+                    if (res.status === 'success') { loadPendingStaff(); loadStaff(); }
                 });
         }
 
@@ -950,8 +1219,21 @@
                 .then(r => r.json())
                 .then(res => {
                     if (handleAuthError(res)) return;
-                    const tb = document.getElementById('sessionsTableBody');
-                    tb.innerHTML = res.data.map(s => {
+                    const activeTb = document.getElementById('sessionsTableBody');
+                    const compTb = document.getElementById('completedSessionsTableBody');
+                    
+                    const activeSessions = [];
+                    const compSessions = [];
+                    
+                    res.data.forEach(s => {
+                        if (s.status === 'completed') {
+                            compSessions.push(s);
+                        } else {
+                            activeSessions.push(s);
+                        }
+                    });
+                    
+                    const renderRow = (s) => {
                         let statusColor = '#3b82f6';
                         if (s.status === 'completed') statusColor = '#10b981';
                         if (s.status === 'blocked') statusColor = '#ef4444';
@@ -967,8 +1249,295 @@
                                 <a href="session_view.php?id=${s.id}" target="_blank" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye"></i> View Queue</a>
                             </td>
                         </tr>
-                    `}).join('');
+                        `;
+                    };
+
+                    activeTb.innerHTML = activeSessions.length > 0 ? activeSessions.map(renderRow).join('') : '<tr><td colspan="6" style="text-align:center;">No active sessions.</td></tr>';
+                    
+                    if (compSessions.length > 0) {
+                        document.getElementById('completedSessionsCard').style.display = 'block';
+                        compTb.innerHTML = compSessions.map(renderRow).join('');
+                    } else {
+                        document.getElementById('completedSessionsCard').style.display = 'none';
+                    }
                 });
+        }
+
+        // ---- Admin Map Picker (Leaflet + OpenStreetMap) ----
+        let _adminMapInited = false;
+
+        function initAdminMap() {
+            if (_adminMapInited) {
+                // Already inited — just invalidate size in case the panel was hidden
+                if (window._adminMap) window._adminMap.invalidateSize();
+                return;
+            }
+            _adminMapInited = true;
+
+            // Default center: Sri Lanka
+            const defaultLat = 7.8731;
+            const defaultLng = 80.7718;
+
+            const map = L.map('adminMapPicker').setView([defaultLat, defaultLng], 8);
+            window._adminMap = map;
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Custom green pin icon
+            const greenIcon = L.divIcon({
+                className: '',
+                html: '<div style="width:28px;height:28px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>',
+                iconSize: [28, 28],
+                iconAnchor: [14, 28]
+            });
+
+            map.on('click', function(e) {
+                const { lat, lng } = e.latlng;
+                placeAdminMarker(lat, lng, greenIcon);
+            });
+        }
+
+        function placeAdminMarker(lat, lng, icon) {
+            if (!window._adminMap) return;
+            if (!icon) {
+                icon = L.divIcon({
+                    className: '',
+                    html: '<div style="width:28px;height:28px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>',
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 28]
+                });
+            }
+            if (window._adminMapMarker) window._adminMap.removeLayer(window._adminMapMarker);
+            window._adminMapMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(window._adminMap);
+
+            window._adminMapMarker.on('dragend', function(ev) {
+                const pos = ev.target.getLatLng();
+                setAdminCoords(pos.lat, pos.lng);
+            });
+
+            window._adminMap.setView([lat, lng], 15);
+            setAdminCoords(lat, lng);
+        }
+
+        function setAdminCoords(lat, lng) {
+            const latFixed = parseFloat(lat).toFixed(6);
+            const lngFixed = parseFloat(lng).toFixed(6);
+            document.getElementById('centerLat').value = latFixed;
+            document.getElementById('centerLng').value = lngFixed;
+            document.getElementById('coordText').textContent = `${latFixed}, ${lngFixed}`;
+            document.getElementById('mapCoordDisplay').style.display = 'block';
+            document.getElementById('mapCoordWarning').style.display = 'none';
+        }
+
+        function searchAddressOnMap() {
+            const name    = document.querySelector('#addCenterForm [name="name"]').value.trim();
+            const address = document.getElementById('centerAddress').value.trim();
+            const area    = document.querySelector('#addCenterForm [name="area"]').value.trim();
+
+            if (!address && !name && !area) {
+                showToast('Please fill in the Center Name or Full Address first.', true);
+                return;
+            }
+
+            // Create an array of increasingly broader search queries
+            const queriesToTry = [];
+            
+            if (name && address && area) {
+                queriesToTry.push(`${name}, ${address}, ${area}, Sri Lanka`);
+            }
+            if (address && area) {
+                queriesToTry.push(`${address}, ${area}, Sri Lanka`);
+            }
+            if (area) {
+                queriesToTry.push(`${area}, Sri Lanka`);
+            }
+            if (queriesToTry.length === 0 && name) {
+                queriesToTry.push(`${name}, Sri Lanka`);
+            }
+
+            if (queriesToTry.length === 0) return;
+
+            showToast('Searching for location...');
+            
+            function tryNextQuery(index) {
+                if (index >= queriesToTry.length) {
+                    showToast('Address not found. Please click the map to set the pin manually.', true);
+                    return;
+                }
+                
+                const query = queriesToTry[index];
+                
+                fetch(`api/geocode.php?q=${encodeURIComponent(query)}&portal=admin`)
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.status === 'success') {
+                            initAdminMap();
+                            placeAdminMarker(res.lat, res.lng);
+                            showToast(`Location found! (${res.label}). Drag the pin to fine-tune if needed.`);
+                        } else {
+                            // Try the next (broader) query
+                            tryNextQuery(index + 1);
+                        }
+                    })
+                    .catch(() => showToast('Location search failed. Click on the map manually.', true));
+            }
+
+            // Start with the most specific query
+            tryNextQuery(0);
+        }
+
+        // ========== GLOBAL SEARCH ==========
+        (function() {
+            const input = document.getElementById('globalSearchInput');
+            const overlay = document.getElementById('searchResultsOverlay');
+            let debounceTimer = null;
+            let currentQuery = '';
+
+            // Ctrl+K shortcut
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    input.focus();
+                    input.select();
+                }
+                if (e.key === 'Escape') {
+                    overlay.classList.remove('visible');
+                    input.blur();
+                }
+            });
+
+            // Close when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.global-search-wrap')) {
+                    overlay.classList.remove('visible');
+                }
+            });
+
+            input.addEventListener('input', function() {
+                const q = this.value.trim();
+                clearTimeout(debounceTimer);
+
+                if (q.length < 2) {
+                    overlay.classList.remove('visible');
+                    currentQuery = '';
+                    return;
+                }
+
+                // Show loading state
+                overlay.innerHTML = `
+                    <div class="search-loading">
+                        <i class="fa-solid fa-spinner"></i>
+                        <p style="margin:0.5rem 0 0; font-size:0.85rem;">Searching...</p>
+                    </div>`;
+                overlay.classList.add('visible');
+
+                currentQuery = q;
+                debounceTimer = setTimeout(() => performSearch(q), 300);
+            });
+
+            input.addEventListener('focus', function() {
+                if (overlay.innerHTML && this.value.trim().length >= 2) {
+                    overlay.classList.add('visible');
+                }
+            });
+
+            function performSearch(query) {
+                fetch(`api/admin_search.php?q=${encodeURIComponent(query)}&portal=admin`)
+                    .then(r => r.json())
+                    .then(res => {
+                        // If the query changed while we were fetching, ignore this result
+                        if (query !== currentQuery) return;
+
+                        if (res.status !== 'success' || res.total === 0) {
+                            overlay.innerHTML = `
+                                <div class="search-empty">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <p style="margin:0; font-weight:600;">No results found</p>
+                                    <p style="margin:0.25rem 0 0; font-size:0.8rem;">Try a different search term</p>
+                                </div>`;
+                            overlay.classList.add('visible');
+                            return;
+                        }
+
+                        let html = `
+                            <div class="search-results-header">
+                                <span>${res.total} result${res.total !== 1 ? 's' : ''} found</span>
+                                <span style="font-size:0.72rem; color:#cbd5e1;">ESC to close</span>
+                            </div>`;
+
+                        res.results.forEach(cat => {
+                            html += `
+                                <div class="search-category-label">
+                                    <i class="${cat.icon}" style="background: ${cat.color};"></i>
+                                    ${cat.category} (${cat.items.length})
+                                </div>`;
+                            cat.items.forEach(item => {
+                                html += `
+                                    <div class="search-result-item" onclick="navigateSearchResult('${item.tab}')">
+                                        <div class="search-result-info">
+                                            <div class="sr-title">${highlightMatch(item.title, query)}</div>
+                                            <div class="sr-subtitle">${highlightMatch(item.subtitle, query)}</div>
+                                        </div>
+                                        ${item.meta ? `<span class="sr-meta">${item.meta}</span>` : ''}
+                                        <span class="sr-badge" style="background: ${item.badge_color};">${item.badge}</span>
+                                    </div>`;
+                            });
+                        });
+
+                        overlay.innerHTML = html;
+                        overlay.classList.add('visible');
+                    })
+                    .catch(() => {
+                        overlay.innerHTML = `
+                            <div class="search-empty">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <p style="margin:0; font-weight:600;">Search failed</p>
+                                <p style="margin:0.25rem 0 0; font-size:0.8rem;">Please try again</p>
+                            </div>`;
+                    });
+            }
+
+            function highlightMatch(text, query) {
+                if (!text || !query) return text || '';
+                const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark style="background:#fef08a; padding:0 2px; border-radius:2px;">$1</mark>');
+            }
+        })();
+
+        function navigateSearchResult(tab) {
+            // Close search
+            document.getElementById('searchResultsOverlay').classList.remove('visible');
+            document.getElementById('globalSearchInput').value = '';
+
+            // Navigate to the correct tab
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + tab).classList.add('active');
+
+            const titles = {
+                'analytics': 'Analytics Overview',
+                'centers': 'Manage Medical Centers',
+                'patients': 'Manage Patients',
+                'staff': 'Manage Medical Staff',
+                'sessions': 'Session Overview',
+                'add-center': 'Add Medical Center'
+            };
+            document.getElementById('pageTitle').textContent = titles[tab] || tab;
+
+            // Highlight the correct sidebar item
+            document.querySelectorAll('.nav-item').forEach(el => {
+                const onclick = el.getAttribute('onclick') || '';
+                if (onclick.includes("'" + tab + "'")) el.classList.add('active');
+            });
+
+            // Load data for the tab
+            if (tab === 'centers') loadCenters();
+            if (tab === 'patients') loadPatients();
+            if (tab === 'staff') { loadStaff(); loadPendingStaff(); }
+            if (tab === 'sessions') loadSessions();
         }
     </script>
 </body>

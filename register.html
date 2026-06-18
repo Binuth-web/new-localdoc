@@ -1,129 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register | MedConnect</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-
-<body class="auth-page">
-
-    <nav class="navbar auth-navbar">
-        <a href="index.html" class="navbar-brand">
-            <i class="fa-solid fa-heart-pulse"></i> MedConnect
-        </a>
-        <div class="navbar-nav">
-            <a href="index.html">Back to home</a>
-            <a href="login.html" class="btn-login">Login</a>
-        </div>
-    </nav>
-
-    <div class="auth-card">
-        <h2 id="reg-title">Create your patient account</h2>
-        <p id="reg-subtitle">Register to book appointments at MedConnect medical centers.</p>
-
-        <div id="reg-alert" class="alert"></div>
-
-        <form id="standaloneRegisterForm" onsubmit="handleFullRegistration(event)">
-            <input type="hidden" name="center_id" id="center_id_input">
-            <input type="hidden" name="center_name" id="center_name_input">
-
-            <div class="form-row-2">
-                <div class="form-group">
-                    <label>First Name</label>
-                    <input type="text" name="first_name" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Last Name</label>
-                    <input type="text" name="last_name" class="form-control" required>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" name="email" class="form-control" required placeholder="patient@example.com">
-            </div>
-            <div class="form-group">
-                <label>NIC Number</label>
-                <input type="text" name="id_number" class="form-control" required>
-            </div>
-            <div class="form-row-2">
-                <div class="form-group">
-                    <label>Date of Birth</label>
-                    <input type="date" name="dob" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Contact Number</label>
-                    <input type="tel" name="phone" class="form-control" required>
-                </div>
-            </div>
-
-            <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%;">Create account &amp; continue</button>
-
-            <p class="auth-footer">
-                Already registered? <a href="login.html">Log in here</a>
-            </p>
-        </form>
-    </div>
-
+    <title>Redirecting...</title>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-            const centerName = params.get('center');
-            const centerId = params.get('center_id');
-
-            if (centerName) {
-                document.getElementById('reg-title').textContent = `Register to book at ${centerName}`;
-                document.getElementById('reg-subtitle').textContent =
-                    'New patients must create an account before booking an appointment at this medical center.';
-                document.getElementById('center_name_input').value = centerName;
-            }
-            if (centerId) {
-                document.getElementById('center_id_input').value = centerId;
-            }
-        });
-
-        function handleFullRegistration(event) {
-            event.preventDefault();
-
-            const alertBox = document.getElementById('reg-alert');
-            const submitBtn = document.getElementById('reg-submit-btn');
-
-            submitBtn.textContent = 'Registering…';
-            submitBtn.disabled = true;
-
-            fetch('api/register.php', {
-                method: 'POST',
-                body: new FormData(event.target),
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    if (data.status === 'success') {
-                        alertBox.className = 'alert success';
-                        alertBox.textContent = data.message;
-                        alertBox.style.display = 'block';
-                        setTimeout(() => {
-                            window.location.href = data.redirect || 'index.html';
-                        }, 1500);
-                    } else {
-                        alertBox.className = 'alert error';
-                        alertBox.textContent = data.message;
-                        alertBox.style.display = 'block';
-                        submitBtn.textContent = 'Create account & continue';
-                        submitBtn.disabled = false;
-                    }
-                })
-                .catch(() => {
-                    alertBox.className = 'alert error';
-                    alertBox.textContent = 'Network error. Please try again.';
-                    alertBox.style.display = 'block';
-                    submitBtn.textContent = 'Create account & continue';
-                    submitBtn.disabled = false;
-                });
-        }
+        window.location.replace('login.html' + window.location.search);
     </script>
+</head>
+<body>
+    <p>Redirecting to the login portal...</p>
 </body>
-
 </html>

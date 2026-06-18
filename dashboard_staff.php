@@ -19,6 +19,16 @@ if (!$_activeUser || (int)$_activeUser['is_active'] === 0) {
 require 'api/helpers.php';
 
 $center_id = $_SESSION['center_id'] ?? null;
+
+// Enforce center_id for staff, but allow admins to see all
+if ($_SESSION['role'] !== 'admin' && !$center_id) {
+    die('<div style="padding:2rem; font-family:sans-serif; color:red;"><h3>Error</h3><p>Your account is not linked to any Medical Center. Please contact the administrator.</p></div>');
+}
+
+if ($_SESSION['role'] === 'admin') {
+    $center_id = null; // Admins override to see everything
+}
+
 if ($center_id) {
     $centersStmt = $pdo->prepare("SELECT id, name FROM medical_centers WHERE id = ?");
     $centersStmt->execute([$center_id]);
@@ -62,7 +72,16 @@ if ($center_id) {
         ORDER BY os.session_date DESC, os.start_time DESC
     ");
 }
-$sessions = $sessionsStmt->fetchAll();
+$allSessions = $sessionsStmt->fetchAll();
+$activeSessions = [];
+$completedSessions = [];
+foreach ($allSessions as $s) {
+    if ($s['status'] === 'completed') {
+        $completedSessions[] = $s;
+    } else {
+        $activeSessions[] = $s;
+    }
+}
 
 // Fetch staff notifications
 $notifStmt = $pdo->prepare("SELECT * FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC LIMIT 10");
@@ -76,6 +95,7 @@ $notifications = $notifStmt->fetchAll();
     <title>Staff Dashboard | MedConnect</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .staff-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; }
         .staff-card { background: white; padding: 2rem; border-radius: 10px; box-shadow: var(--shadow); }
@@ -187,6 +207,47 @@ $notifications = $notifStmt->fetchAll();
         </div>
         <?php endif; ?>
 
+        <div style="background: white; border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); padding: 2rem; margin-bottom: 2rem; overflow: hidden; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: var(--secondary); margin: 0; font-size: 1.3rem;"><i class="fa-solid fa-chart-line" style="color: var(--primary);"></i> Daily Medical Center Analysis</h3>
+                <input type="date" id="analyticsDate" class="form-control" style="max-width: 200px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 0.5rem 1rem;" value="<?php echo date('Y-m-d'); ?>" onchange="loadAnalytics()">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Total Sessions -->
+                <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 12px; padding: 1.5rem; color: white; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25); transition: transform 0.2s;">
+                    <i class="fa-solid fa-clipboard-list" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg);"></i>
+                    <p style="margin:0 0 0.25rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; font-weight: 600;">Total Sessions</p>
+                    <h3 id="statTotalSessions" style="margin:0; font-size: 2.2rem; font-weight: 800;">0</h3>
+                </div>
+                <!-- Attendance Rate -->
+                <div style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; padding: 1.5rem; color: white; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25); transition: transform 0.2s;">
+                    <i class="fa-solid fa-check-double" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg);"></i>
+                    <p style="margin:0 0 0.25rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; font-weight: 600;">Attendance Rate</p>
+                    <h3 id="statAttendance" style="margin:0; font-size: 2.2rem; font-weight: 800;">0%</h3>
+                </div>
+                <!-- Late Requests -->
+                <div style="background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 12px; padding: 1.5rem; color: white; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25); transition: transform 0.2s;">
+                    <i class="fa-solid fa-clock-rotate-left" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg);"></i>
+                    <p style="margin:0 0 0.25rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; font-weight: 600;">Late Requests</p>
+                    <h3 id="statLate" style="margin:0; font-size: 2.2rem; font-weight: 800;">0</h3>
+                </div>
+                <!-- Cancellation Rate -->
+                <div style="background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 12px; padding: 1.5rem; color: white; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25); transition: transform 0.2s;">
+                    <i class="fa-solid fa-ban" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg);"></i>
+                    <p style="margin:0 0 0.25rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; font-weight: 600;">Cancellation Rate</p>
+                    <h3 id="statCancellation" style="margin:0; font-size: 2.2rem; font-weight: 800;">0%</h3>
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center;">
+                <h4 style="margin: 0 0 1rem 0; color: #475569; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em;">Patient Flow Distribution</h4>
+                <div style="position: relative; height: 260px; width: 100%;">
+                    <canvas id="tokenChart"></canvas>
+                </div>
+            </div>
+        </div>
+
         <div class="staff-grid">
             <div class="staff-card">
                 <h3 style="color: var(--secondary); margin-top: 0;"><i class="fa-solid fa-plus"></i> Add Doctor & Session</h3>
@@ -226,7 +287,7 @@ $notifications = $notifStmt->fetchAll();
                 </form>
             </div>
 
-            <div class="staff-card" style="overflow-x: auto;">
+            <div class="staff-card" style="overflow-x: auto; margin-bottom: 2rem;">
                 <h3 style="color: var(--secondary); margin-top: 0;"><i class="fa-solid fa-list-ul"></i> Scheduled Sessions</h3>
                 <table>
                     <thead>
@@ -240,7 +301,7 @@ $notifications = $notifStmt->fetchAll();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($sessions as $s): ?>
+                        <?php foreach ($activeSessions as $s): ?>
                         <tr>
                             <td><?php echo htmlspecialchars($s['session_date']); ?></td>
                             <td style="font-weight: 500; color: var(--primary);"><?php echo htmlspecialchars($s['doctor_name'] ?? 'N/A'); ?></td>
@@ -255,35 +316,68 @@ $notifications = $notifStmt->fetchAll();
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <?php if ($s['status'] === 'completed'): ?>
-                                    <span style="display:inline-block; background: #dcfce7; color: #166534; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.3rem;"><i class="fa-solid fa-check-circle"></i> Completed</span><br>
-                                <?php else: ?>
-                                    <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
-                                        <?php if ($s['status'] === 'active'): ?>
-                                            <button onclick="updateSessionStatus(<?php echo $s['id']; ?>, 'block')" style="background: #fee2e2; color: #991b1b; border: none; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-ban"></i> Block</button>
-                                        <?php elseif ($s['status'] === 'blocked'): ?>
-                                            <button onclick="updateSessionStatus(<?php echo $s['id']; ?>, 'resume')" style="background: #fef3c7; color: #92400e; border: none; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-play"></i> Resume</button>
-                                        <?php endif; ?>
-                                        <button onclick="updateSessionStatus(<?php echo $s['id']; ?>, 'complete')" style="background: #dcfce7; color: #166534; border: none; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-check"></i> Complete</button>
-                                    </div>
-                                <?php endif; ?>
+                                <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                                    <?php if ($s['status'] === 'active'): ?>
+                                        <button onclick="updateSessionStatus(<?php echo $s['id']; ?>, 'block')" style="background: #fee2e2; color: #991b1b; border: none; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-ban"></i> Block</button>
+                                    <?php elseif ($s['status'] === 'blocked'): ?>
+                                        <button onclick="updateSessionStatus(<?php echo $s['id']; ?>, 'resume')" style="background: #fef3c7; color: #92400e; border: none; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-play"></i> Resume</button>
+                                    <?php endif; ?>
+                                    <button onclick="updateSessionStatus(<?php echo $s['id']; ?>, 'complete')" style="background: #dcfce7; color: #166534; border: none; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-check"></i> Complete</button>
+                                </div>
                                 <a href="session_view.php?id=<?php echo $s['id']; ?>" class="manage-btn">
                                     <i class="fa-solid fa-clipboard-list"></i> Manage
                                 </a>
-                                <?php if ($s['status'] !== 'completed'): ?>
                                 <button class="edit-btn" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($s), ENT_QUOTES); ?>)">
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
                                 </button>
-                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
-                        <?php if (count($sessions) === 0): ?>
-                        <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No sessions scheduled.</td></tr>
+                        <?php if (count($activeSessions) === 0): ?>
+                        <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No active sessions scheduled.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
             </div>
+
+            <?php if (count($completedSessions) > 0): ?>
+            <div class="staff-card" style="overflow-x: auto; grid-column: 1 / -1;">
+                <h3 style="color: #64748b; margin-top: 0;"><i class="fa-solid fa-check-circle"></i> Completed Sessions</h3>
+                <table style="opacity: 0.85;">
+                    <thead>
+                        <tr style="background: #f8fafc;">
+                            <th>Date</th>
+                            <th>Doctor</th>
+                            <th>Center</th>
+                            <th>Time</th>
+                            <th>Tokens</th>
+                            <th>Manage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($completedSessions as $s): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($s['session_date']); ?></td>
+                            <td style="font-weight: 500; color: var(--primary);"><?php echo htmlspecialchars($s['doctor_name'] ?? 'N/A'); ?></td>
+                            <td><i class="fa-solid fa-hospital" style="color: #94a3b8; font-size: 0.8rem;"></i> <?php echo htmlspecialchars($s['center_name']); ?></td>
+                            <td><?php echo substr($s['start_time'],0,5) . ' - ' . substr($s['end_time'],0,5); ?></td>
+                            <td>
+                                <span style="background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                                    <?php echo $s['booked_count'] . '/' . $s['max_tokens']; ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span style="display:inline-block; background: #dcfce7; color: #166534; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.3rem;"><i class="fa-solid fa-check-circle"></i> Completed</span><br>
+                                <a href="session_view.php?id=<?php echo $s['id']; ?>" class="manage-btn" style="background: #f1f5f9; color: #475569;">
+                                    <i class="fa-solid fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -403,6 +497,52 @@ $notifications = $notifStmt->fetchAll();
         document.getElementById('editModal').addEventListener('click', function(e) {
             if (e.target === this) closeEditModal();
         });
+
+        // Analytics Logic
+        let tokenChartInst = null;
+        function loadAnalytics() {
+            const date = document.getElementById('analyticsDate').value;
+            fetch(`api/admin_analytics.php?date=${date}&portal=staff`)
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status !== 'success') return;
+                    const d = res.data;
+                    const t = d.tokens;
+
+                    document.getElementById('statTotalSessions').textContent = d.sessions.total;
+
+                    const totalAttended = t.present + t.done + t.walkin_present;
+                    const attRate = t.total_booked > 0 ? Math.round((totalAttended / t.total_booked) * 100) : 0;
+                    document.getElementById('statAttendance').textContent = attRate + '%';
+
+                    document.getElementById('statLate').textContent = t.late_approved + t.late_denied;
+
+                    const totalCanceled = t.canceled + t.walkin_cancel + t.absent;
+                    const canRate = t.total_booked > 0 ? Math.round((totalCanceled / t.total_booked) * 100) : 0;
+                    document.getElementById('statCancellation').textContent = canRate + '%';
+
+                    updateTokenChart(t);
+                });
+        }
+
+        function updateTokenChart(t) {
+            const ctx = document.getElementById('tokenChart').getContext('2d');
+            if (tokenChartInst) tokenChartInst.destroy();
+            tokenChartInst = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Done/Served', 'Waiting', 'No-Show', 'Cancelled', 'Empty Slots'],
+                    datasets: [{
+                        data: [t.done + t.walkin_present, t.present, t.absent, t.canceled + t.walkin_cancel, t.permanently_empty],
+                        backgroundColor: ['#10b981', '#3b82f6', '#ef4444', '#94a3b8', '#e2e8f0']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+        
+        // Initial load
+        window.addEventListener('DOMContentLoaded', loadAnalytics);
     </script>
 </body>
 </html>

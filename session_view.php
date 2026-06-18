@@ -259,7 +259,7 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
                 <i class="fa-solid fa-spinner fa-spin"></i> Loading tokens...
             </div>
         </div>
-
+        
         <!-- Late requests -->
         <div id="lateSection" style="display:none;">
             <div class="section-title">

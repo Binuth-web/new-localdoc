@@ -13,15 +13,117 @@
         <a href="index.html" class="navbar-brand"><i class="fa-solid fa-heart-pulse"></i> MedConnect</a>
     </nav>
 
-    <div class="login-wrapper">
-        <div class="login-box">
-            <div class="login-header">
-                <h2><i class="fa-solid fa-user" style="color: var(--primary);"></i> Patient Portal</h2>
-                <p>Log in to view and manage your appointments</p>
+    <style>
+        body {
+            background-color: #f1f5f9;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: rgba(15, 23, 42, 0.8) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .navbar-brand { color: white !important; }
+        .split-login-wrapper {
+            max-width: 1100px;
+            margin: 4rem auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 10;
+        }
+        .split-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .split-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0.8;
+        }
+        .split-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .split-header {
+            margin-bottom: 2.5rem;
+            text-align: center;
+        }
+        .split-header h2 {
+            margin: 0 0 0.5rem;
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0f172a, #334155);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .split-header p {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .form-control {
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+        .form-control:focus {
+            background: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 10px;
+            padding: 0.85rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -5px rgba(59, 130, 246, 0.5);
+        }
+        @media (max-width: 768px) {
+            .split-login-wrapper {
+                grid-template-columns: 1fr;
+                margin: 2rem auto;
+                padding: 0 1rem;
+            }
+            .split-card { padding: 2rem; }
+        }
+    </style>
+
+    <div class="split-login-wrapper">
+        <!-- Left Side: Login Form -->
+        <div class="split-card">
+            <div class="split-header">
+                <h2><i class="fa-solid fa-right-to-bracket" style="color: var(--primary);"></i> Login</h2>
+                <p>Already have an account? Log in here</p>
             </div>
 
-            <!-- Patient Login Form -->
-            <form class="login-form" id="patientLoginForm" onsubmit="handlePatientLogin(event)">
+            <form class="login-form" id="patientLoginForm" onsubmit="handlePatientLogin(event)" style="display: flex;">
                 <input type="hidden" name="role" value="patient">
                 <div id="patient-alert-box" class="alert"></div>
 
@@ -40,17 +142,20 @@
                     <input type="text" name="id_number" class="form-control" required placeholder="Enter your NIC number">
                 </div>
 
-                <button type="submit" class="btn-primary" id="patient-submit-btn" style="width: 100%; margin-top: 0.5rem;">
+                <button type="submit" class="btn-primary" id="patient-submit-btn" style="width: 100%; margin-top: 1rem;">
                     <i class="fa-solid fa-right-to-bracket"></i> Log In
                 </button>
-
-                <div class="login-footer" id="register-link">
-                    Don't have an account? <a href="#" onclick="toggleRegister(true); return false;">Register here</a>
-                </div>
             </form>
+        </div>
 
-            <!-- Patient Registration Form -->
-            <form class="login-form" id="registerForm" style="display: none;" onsubmit="handlePatientRegister(event)">
+        <!-- Right Side: Registration Form -->
+        <div class="split-card">
+            <div class="split-header">
+                <h2><i class="fa-solid fa-user-plus" style="color: var(--secondary);"></i> Register</h2>
+                <p>New to MedConnect? Please register first</p>
+            </div>
+
+            <form class="login-form" id="registerForm" onsubmit="handlePatientRegister(event)" style="display: flex;">
                 <div id="reg-alert-box" class="alert"></div>
 
                 <div class="form-row-2">
@@ -69,7 +174,7 @@
                 </div>
                 <div class="form-group">
                     <label>NIC Number</label>
-                    <input type="text" name="id_number" class="form-control" required placeholder="Enter your NIC number">
+                    <input type="text" name="id_number" class="form-control" required placeholder="Enter your NIC number" pattern="^(?:\d{9}[VvXx]|\d{12})$" title="Format: 9 digits followed by V/X, or 12 digits (e.g. 981234567V or 199812345678)">
                 </div>
                 <div class="form-row-2">
                     <div class="form-group">
@@ -78,17 +183,13 @@
                     </div>
                     <div class="form-group">
                         <label>Contact Number</label>
-                        <input type="tel" name="phone" class="form-control" required placeholder="Phone number">
+                        <input type="tel" name="phone" class="form-control" required placeholder="07XXXXXXXX" pattern="^0\d{9}$" title="Format: 10 digits starting with 0 (e.g. 0712345678)">
                     </div>
                 </div>
 
-                <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%; margin-top: 0.5rem;">
+                <button type="submit" class="btn-primary" id="reg-submit-btn" style="width: 100%; margin-top: 1rem;">
                     <i class="fa-solid fa-user-plus"></i> Create Account
                 </button>
-
-                <div class="login-footer">
-                    Already have an account? <a href="#" onclick="toggleRegister(false); return false;">Log in here</a>
-                </div>
             </form>
         </div>
     </div>
@@ -98,19 +199,16 @@
             const urlParams = new URLSearchParams(window.location.search);
             const redirect = urlParams.get('redirect');
             if (redirect) {
-                const note = document.createElement('p');
-                note.style.cssText = 'text-align:center;color:var(--text-muted);font-size:0.9rem;margin:0 2rem 1rem;';
-                note.textContent = 'Please log in to continue.';
-                const box = document.querySelector('.login-box');
-                if (box) box.insertBefore(note, box.querySelector('.login-form'));
+                const note = document.createElement('div');
+                note.className = 'alert error';
+                note.style.display = 'block';
+                note.style.marginBottom = '2rem';
+                note.style.textAlign = 'center';
+                note.textContent = 'Please log in or register to continue.';
+                const wrapper = document.querySelector('.split-login-wrapper');
+                if (wrapper) wrapper.parentElement.insertBefore(note, wrapper);
             }
         });
-
-        function toggleRegister(show) {
-            document.getElementById('patientLoginForm').style.display = show ? 'none' : 'flex';
-            document.getElementById('registerForm').style.display = show ? 'flex' : 'none';
-            document.querySelectorAll('.alert').forEach(a => a.style.display = 'none');
-        }
 
         function handlePatientLogin(event) {
             event.preventDefault();
@@ -162,6 +260,24 @@
             if (centerId) formData.append('center_id', centerId);
             const alertBox = document.getElementById('reg-alert-box');
             const submitBtn = document.getElementById('reg-submit-btn');
+
+            // Client-side validation
+            const phone = formData.get('phone');
+            const nic = formData.get('id_number');
+            
+            if (!/^0\d{9}$/.test(phone)) {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'Invalid contact number. Must be 10 digits starting with 0.';
+                alertBox.style.display = 'block';
+                return;
+            }
+            if (!/^(?:\d{9}[VvXx]|\d{12})$/.test(nic)) {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'Invalid NIC format. Must be 9 digits followed by V/X or 12 digits.';
+                alertBox.style.display = 'block';
+                return;
+            }
+
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
             submitBtn.disabled = true;
 

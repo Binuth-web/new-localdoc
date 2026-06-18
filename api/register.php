@@ -39,6 +39,18 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
+// Validate Sri Lankan Phone Number (0 followed by 9 digits)
+if (!preg_match('/^0\d{9}$/', $phone)) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid contact number. Must be 10 digits starting with 0.']);
+    exit;
+}
+
+// Validate Sri Lankan NIC (9 digits + V/X OR 12 digits)
+if (!preg_match('/^(?:\d{9}[VvXx]|\d{12})$/', $idNumber)) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid NIC format. Must be 9 digits followed by V/X or 12 digits.']);
+    exit;
+}
+
 // Generate dummy password since patient accounts no longer use them
 $passwordHash = password_hash('NOPASSWORD', PASSWORD_DEFAULT);
 

@@ -3,7 +3,8 @@ session_name('medconnect_staff');
 require 'db_connect.php';
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+$role = $_SESSION['role'] ?? '';
+if (!isset($_SESSION['user_id']) || !in_array($role, ['admin', 'staff', 'medical_staff', 'doctor'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized.']);
     exit;
 }
@@ -11,9 +12,30 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 $date = $_GET['date'] ?? date('Y-m-d');
 $centerId = (int)($_GET['center_id'] ?? 0);
 
+if (in_array($role, ['staff', 'medical_staff', 'doctor'])) {
+    $centerId = (int)($_SESSION['center_id'] ?? 0);
+}
+
 // Filter by center if requested
-$centerFilterOS = $centerId > 0 ? " AND os.clinic_id = " . $centerId : "";
-$centerFilterOT = $centerId > 0 ? " AND os.clinic_id = " . $centerId : "";
+$centerFilterOS = "";
+$centerFilterOT = "";
+
+if (in_array($role, ['staff', 'medical_staff', 'doctor'])) {
+    if ($centerId > 0) {
+        $centerFilterOS = " AND os.clinic_id = " . $centerId;
+        $centerFilterOT = " AND os.clinic_id = " . $centerId;
+    } else {
+        // Staff without a center_id should see NOTHING, not everything!
+        $centerFilterOS = " AND os.clinic_id = -1";
+        $centerFilterOT = " AND os.clinic_id = -1";
+    }
+} else {
+    // Admin
+    if ($centerId > 0) {
+        $centerFilterOS = " AND os.clinic_id = " . $centerId;
+        $centerFilterOT = " AND os.clinic_id = " . $centerId;
+    }
+}
 
 $analytics = [];
 
