@@ -2187,3 +2187,339 @@ Cookie: Array
     [medconnect_patient] => sfhmqom12hb89jv2kmggoecclh
 )
 
+2026-06-18 20:06:30 - start_session
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:06:51 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:07:02 - call_next_token
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:09:30 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:09:31 - call_next_token
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:11:31 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:11:32 - call_next_token
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:11:46 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:20:07 - call_next_token
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:25:01 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:25:06 - call_next_token
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:27:18 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:27:26 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:27:27 - call_next_token
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:28:33 - call_next_token
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:30:33 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:31:40 - call_next_token
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:31:55 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:31:58 - call_next_token
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:32:01 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+
+2026-06-18 20:32:08 - mark_attendance
+Array
+(
+    [user_id] => 123
+    [role] => staff
+    [name] => staff
+    [center_id] => 1
+)
+
+Cookie: Array
+(
+    [medconnect_staff] => 4ogvnfg7iss80aqqfvaqu510m0
+    [medconnect_portal] => patient
+    [medconnect_patient] => r7531i62hv6jdlu17ekt6kgsvs
+)
+

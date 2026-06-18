@@ -38,18 +38,25 @@ if ($action === 'present') {
     $pdo->prepare("UPDATE opd_tokens SET status = 'served', attendance_marked = 1 WHERE id = ?")->execute([$tokenId]);
     echo json_encode(['status' => 'success', 'message' => 'Marked as completed.']);
 } else {
-    // Mark as no-show and notify the patient
+    // Mark as no-show and conditionally notify the patient
     $pdo->prepare("UPDATE opd_tokens SET status = 'no-show', attendance_marked = 0 WHERE id = ?")->execute([$tokenId]);
 
-    $message = "⚠️ You were marked ABSENT for token {$token['token_number']}. If you are on your way, please click 'Request Late Token' below before the session ends.";
-    $pdo->prepare("INSERT INTO notifications (user_id, token_id, message, type, action_label, action_data) VALUES (?, ?, ?, 'action', 'Request Late Token', ?)")
-        ->execute([
-            $token['patient_id'],
-            $tokenId,
-            $message,
-            json_encode(['token_id' => $tokenId])
-        ]);
+    if ($token['token_type'] === 'walk-in') {
+        // Walk-in patients can't request late tokens, so immediately refund the slot
+        $pdo->prepare("UPDATE opd_sessions SET max_tokens = max_tokens + 1 WHERE id = ?")->execute([$token['session_id']]);
+        echo json_encode(['status' => 'success', 'message' => 'Marked as absent. Slot refunded for walk-in patient.']);
+    } else {
+        // Online patient - send them a notification to request a late token
+        $message = "⚠️ You were marked ABSENT for token {$token['token_number']}. If you are on your way, please click 'Request Late Token' below before the session ends.";
+        $pdo->prepare("INSERT INTO notifications (user_id, token_id, message, type, action_label, action_data) VALUES (?, ?, ?, 'action', 'Request Late Token', ?)")
+            ->execute([
+                $token['patient_id'],
+                $tokenId,
+                $message,
+                json_encode(['token_id' => $tokenId])
+            ]);
 
-    echo json_encode(['status' => 'success', 'message' => 'Marked as absent. Patient notified.']);
+        echo json_encode(['status' => 'success', 'message' => 'Marked as absent. Patient notified.']);
+    }
 }
 ?>

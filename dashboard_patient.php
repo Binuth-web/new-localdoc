@@ -239,7 +239,7 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
         </div>
     </nav>
 
-    <div style="max-width: 900px; margin: 0 auto;">
+    <div id="live-container" style="max-width: 900px; margin: 0 auto;">
 
         <?php if (count($notifications) > 0): ?>
         <div class="notif-banner" id="notifBanner">
@@ -441,9 +441,26 @@ function getDisplayStatus(string $status, int $attendanceMarked): array {
             const fd = new FormData();
             fetch('api/dismiss_notification.php?portal=patient', { method: 'POST', body: fd })
                 .then(() => {
-                    document.getElementById('notifBanner').remove();
+                    const banner = document.getElementById('notifBanner');
+                    if (banner) banner.remove();
                 });
         }
+
+        // Live Auto-Refresh (Silent)
+        // Polls the server every 10 seconds and updates the HTML without flickering
+        setInterval(() => {
+            fetch(location.href)
+                .then(r => r.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const newDoc = parser.parseFromString(html, 'text/html');
+                    const newContent = newDoc.getElementById('live-container');
+                    if (newContent) {
+                        document.getElementById('live-container').innerHTML = newContent.innerHTML;
+                    }
+                })
+                .catch(err => console.error("Silent refresh failed", err));
+        }, 10000);
     </script>
 </body>
 </html>

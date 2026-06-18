@@ -389,6 +389,7 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
                 actionsHtml = `
                     <div class="token-actions">
                         <button class="btn-mark btn-approve" onclick="approveLate(${slot.token_id})">✓ Approve Late</button>
+                        <button class="btn-mark btn-absent" onclick="cancelLate(${slot.token_id})">✗ Cancel Token</button>
                     </div>`;
             }
 
@@ -453,6 +454,18 @@ if (!$session) { header('Location: dashboard_staff.php'); exit; }
             const fd = new FormData();
             fd.append('token_id', tokenId);
             fetch('api/approve_late_token.php?portal=staff', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    showToast(data.message, data.status);
+                    loadTokens();
+                });
+        }
+
+        function cancelLate(tokenId) {
+            if (!confirm("Are you sure you want to REJECT this late request and CANCEL the token? The patient will be notified.")) return;
+            const fd = new FormData();
+            fd.append('token_id', tokenId);
+            fetch('api/reject_late_token.php?portal=staff', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     showToast(data.message, data.status);
