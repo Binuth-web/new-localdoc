@@ -1,0 +1,517 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  MedConnect – Full AWS infrastructure for hosting the PHP/MySQL web application.
+  Designed for AWS Free Tier + $50 credits (t2.micro EC2 + db.t3.micro RDS).
+  No NAT Gateway, no ALB – direct public IP EC2 with security-group-restricted RDS.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PARAMETERS
+# ─────────────────────────────────────────────────────────────────────────────
+Parameters:
+
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: >
+      Name of an existing EC2 Key Pair for SSH access to the web server.
+      Create one in the AWS Console → EC2 → Key Pairs before deploying.
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern: "[a-zA-Z0-9!#$%^&*()_+=-]*"
+    Description: >
+      Password for the RDS MySQL 'medconnect_admin' user.
+      Min 8 characters. No slashes, quotes, or @ symbols.
+
+  GitHubRepoURL:
+    Type: String
+    Default: "https://github.com/Binuth-web/new-localdoc.git"
+    Description: >
+      HTTPS URL of the GitHub repository to clone onto the EC2 instance.
+      For private repos, include a personal access token:
+      https://<TOKEN>@github.com/Binuth-web/new-localdoc.git
+
+  AppBranch:
+    Type: String
+    Default: "main"
+    Description: >
+      Git branch to deploy (e.g., main or master).
+
+  EnvironmentName:
+    Type: String
+    Default: "medconnect-prod"
+    AllowedValues:
+      - medconnect-prod
+      - medconnect-staging
+      - medconnect-dev
+    Description: Logical environment tag applied to all resources.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAPPINGS  –  AMI IDs by region (Amazon Linux 2023, x86_64, HVM, GP2)
+# ─────────────────────────────────────────────────────────────────────────────
+Mappings:
+  RegionAMI:
+    us-east-1:
+      AMI: ami-0c02fb55956c7d316   # Amazon Linux 2023
+    us-east-2:
+      AMI: ami-097a2df4ac947655f
+    us-west-1:
+      AMI: ami-0d9858aa3c6322f73
+    us-west-2:
+      AMI: ami-098e42ae54c764c35
+    eu-west-1:
+      AMI: ami-0d064d1506aafd23b
+    eu-west-2:
+      AMI: ami-0e34bbddc66def5ac
+    eu-central-1:
+      AMI: ami-07ce6ac5ac8a0ee6f
+    ap-southeast-1:
+      AMI: ami-0df7a207adb9748c7
+    ap-southeast-2:
+      AMI: ami-0310483fb2b488153
+    ap-south-1:
+      AMI: ami-0f5ee92e2d63afc18
+    ap-northeast-1:
+      AMI: ami-0b7546e839d7ace12
+    ca-central-1:
+      AMI: ami-0ea18256de20ecdfc
+    sa-east-1:
+      AMI: ami-0af6e9042ea5a4e3e
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RESOURCES
+# ─────────────────────────────────────────────────────────────────────────────
+Resources:
+
+  # ───────────────────────────────────────────────────────────────────
+  # VPC
+  # ───────────────────────────────────────────────────────────────────
+  MedConnectVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-vpc"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-igw"
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MedConnectVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # ───────────────────────────────────────────────────────────────────
+  # SUBNETS  –  2 public subnets across 2 AZs (required by RDS Subnet Group)
+  # ───────────────────────────────────────────────────────────────────
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MedConnectVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-public-1"
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MedConnectVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-public-2"
+
+  # ───────────────────────────────────────────────────────────────────
+  # ROUTING
+  # ───────────────────────────────────────────────────────────────────
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MedConnectVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-rt-public"
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  Subnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  Subnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  # ───────────────────────────────────────────────────────────────────
+  # SECURITY GROUPS
+  # ───────────────────────────────────────────────────────────────────
+  WebServerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP, HTTPS, and SSH to the web server
+      VpcId: !Ref MedConnectVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0      # SSH – restrict to your IP in production
+          Description: "SSH access"
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: "HTTP traffic"
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: "HTTPS traffic"
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: "All outbound traffic"
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-sg-web"
+
+  RDSSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow MySQL only from the EC2 web server security group
+      VpcId: !Ref MedConnectVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref WebServerSG
+          Description: "MySQL from web server only"
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-sg-rds"
+
+  # ───────────────────────────────────────────────────────────────────
+  # RDS MYSQL
+  # ───────────────────────────────────────────────────────────────────
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets for MedConnect RDS instance
+      SubnetIds:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-db-subnet-group"
+
+  MedConnectDB:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot    # takes a final snapshot when stack is deleted
+    Properties:
+      DBInstanceIdentifier: !Sub "${EnvironmentName}-mysql"
+      DBInstanceClass: db.t3.micro          # Free Tier eligible
+      Engine: mysql
+      EngineVersion: "8.0"
+      MasterUsername: medconnect_admin
+      MasterUserPassword: !Ref DBPassword
+      DBName: medconnect_db
+      AllocatedStorage: "20"               # GB – Free Tier max is 20 GB
+      StorageType: gp2
+      MultiAZ: false                        # Free Tier: Single-AZ only
+      PubliclyAccessible: true             # Required when no NAT gateway
+      VPCSecurityGroups:
+        - !Ref RDSSG
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: "02:00-03:00"
+      PreferredMaintenanceWindow: "sun:04:00-sun:05:00"
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-rds"
+
+  # ───────────────────────────────────────────────────────────────────
+  # IAM ROLE FOR EC2  (CloudWatch logs, SSM Session Manager)
+  # ───────────────────────────────────────────────────────────────────
+  EC2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${EnvironmentName}-ec2-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub "${EnvironmentName}-ec2-profile"
+      Roles:
+        - !Ref EC2InstanceRole
+
+  # ───────────────────────────────────────────────────────────────────
+  # EC2 INSTANCE  –  Apache + PHP + App
+  # ───────────────────────────────────────────────────────────────────
+  WebServerInstance:
+    Type: AWS::EC2::Instance
+    DependsOn: MedConnectDB
+    Properties:
+      InstanceType: t2.micro              # Free Tier eligible
+      ImageId: !FindInMap [RegionAMI, !Ref "AWS::Region", AMI]
+      KeyName: !Ref KeyPairName
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      SubnetId: !Ref PublicSubnet1
+      SecurityGroupIds:
+        - !Ref WebServerSG
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 8               # GB – Free Tier: 30 GB max
+            VolumeType: gp2
+            DeleteOnTermination: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-web"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -e
+          exec > >(tee /var/log/userdata.log | logger -t userdata -s 2>/dev/console) 2>&1
+
+          echo "=== [1/8] System update ==="
+          dnf update -y
+
+          echo "=== [2/8] Install Apache, PHP 8.1, Git, MySQL client ==="
+          dnf install -y \
+            httpd \
+            php \
+            php-mysqlnd \
+            php-pdo \
+            php-json \
+            php-mbstring \
+            php-xml \
+            php-curl \
+            git \
+            mysql \
+            unzip
+
+          echo "=== [3/8] Clone application from GitHub ==="
+          cd /var/www/html
+          git clone --branch ${AppBranch} ${GitHubRepoURL} medconnect
+          chown -R apache:apache /var/www/html/medconnect
+          chmod -R 755 /var/www/html/medconnect
+
+          echo "=== [4/8] Configure database connection ==="
+          # Overwrite db_connect.php with RDS endpoint + credentials
+          cat > /var/www/html/medconnect/api/db_connect.php << 'PHPEOF'
+          <?php
+          // ─── DB CONFIG – injected by CloudFormation UserData ────────────────
+          // Session handling preserved from original code
+          if (empty($_skipAutoSession)) {
+              if (session_name() === 'PHPSESSID') {
+                  $portal = $_GET['portal'] ?? $_COOKIE['medconnect_portal'] ?? 'default';
+                  if ($portal === 'admin') $portal = 'staff';
+                  session_name('medconnect_' . $portal);
+              }
+              if (session_status() === PHP_SESSION_NONE) {
+                  session_start();
+                  if (!empty($_COOKIE['medconnect_staff']) &&
+                      !empty($_COOKIE['medconnect_patient']) &&
+                      $_COOKIE['medconnect_staff'] === $_COOKIE['medconnect_patient']) {
+                      session_regenerate_id(true);
+                  }
+              }
+              if (empty($_SESSION['user_id']) && session_name() !== 'medconnect_staff' && isset($_COOKIE['medconnect_staff'])) {
+                  session_write_close();
+                  session_name('medconnect_staff');
+                  session_id($_COOKIE['medconnect_staff']);
+                  session_start();
+              }
+              if (empty($_SESSION['user_id']) && session_name() !== 'medconnect_patient' && isset($_COOKIE['medconnect_patient'])) {
+                  session_write_close();
+                  session_name('medconnect_patient');
+                  session_id($_COOKIE['medconnect_patient']);
+                  session_start();
+              }
+          }
+
+          $host   = getenv('DB_HOST')   ?: 'RDS_ENDPOINT_PLACEHOLDER';
+          $user   = getenv('DB_USER')   ?: 'medconnect_admin';
+          $pass   = getenv('DB_PASS')   ?: 'DB_PASSWORD_PLACEHOLDER';
+          $dbname = getenv('DB_NAME')   ?: 'medconnect_db';
+
+          try {
+              $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
+              $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+              $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+          } catch (PDOException $e) {
+              header('Content-Type: application/json');
+              echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+              exit;
+          }
+          PHPEOF
+
+          # Now substitute real values into the placeholders
+          RDS_ENDPOINT="${MedConnectDB.Endpoint.Address}"
+          DB_PASS="${DBPassword}"
+
+          sed -i "s|RDS_ENDPOINT_PLACEHOLDER|${!RDS_ENDPOINT}|g" /var/www/html/medconnect/api/db_connect.php
+          sed -i "s|DB_PASSWORD_PLACEHOLDER|${!DB_PASS}|g" /var/www/html/medconnect/api/db_connect.php
+
+          # Write environment variables to Apache envvars so getenv() also works
+          cat >> /etc/httpd/conf/httpd.conf << APACHEENV
+
+          # MedConnect database environment variables
+          SetEnv DB_HOST ${MedConnectDB.Endpoint.Address}
+          SetEnv DB_USER medconnect_admin
+          SetEnv DB_PASS ${DBPassword}
+          SetEnv DB_NAME medconnect_db
+          APACHEENV
+
+          echo "=== [5/8] Configure Apache virtual host ==="
+          cat > /etc/httpd/conf.d/medconnect.conf << 'VHOSTEOF'
+          <VirtualHost *:80>
+              ServerAdmin webmaster@localhost
+              DocumentRoot /var/www/html/medconnect
+
+              <Directory /var/www/html/medconnect>
+                  Options -Indexes +FollowSymLinks
+                  AllowOverride All
+                  Require all granted
+              </Directory>
+
+              # Exclude dev/test files from public access
+              <FilesMatch "^(_test|_migrate|debug_all|cookies\.txt|session_id\.txt)">
+                  Require all denied
+              </FilesMatch>
+
+              ErrorLog /var/log/httpd/medconnect_error.log
+              CustomLog /var/log/httpd/medconnect_access.log combined
+          </VirtualHost>
+          VHOSTEOF
+
+          echo "=== [6/8] Configure PHP session storage ==="
+          mkdir -p /var/lib/php/session
+          chown apache:apache /var/lib/php/session
+          chmod 770 /var/lib/php/session
+
+          # Tune PHP settings for production
+          PHP_INI=$(php --ini | grep "Loaded Configuration" | awk '{print $4}')
+          if [ -f "$PHP_INI" ]; then
+            sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 10M/' "$PHP_INI"
+            sed -i 's/^post_max_size = .*/post_max_size = 12M/' "$PHP_INI"
+            sed -i 's/^max_execution_time = .*/max_execution_time = 30/' "$PHP_INI"
+            sed -i 's/^display_errors = .*/display_errors = Off/' "$PHP_INI"
+            sed -i 's/^log_errors = .*/log_errors = On/' "$PHP_INI"
+          fi
+
+          echo "=== [7/8] Enable and start Apache ==="
+          systemctl enable httpd
+          systemctl start httpd
+
+          echo "=== [8/8] Bootstrap complete ==="
+          echo "MedConnect is now running at: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+          echo "RDS endpoint: ${MedConnectDB.Endpoint.Address}"
+          echo ""
+          echo "NEXT STEP: SSH in and seed the database schema:"
+          echo "  mysql -h ${MedConnectDB.Endpoint.Address} -u medconnect_admin -p medconnect_db < /var/www/html/medconnect/medconnect_db.sql"
+
+  # ───────────────────────────────────────────────────────────────────
+  # ELASTIC IP  –  stable public IP that survives instance restarts
+  # ───────────────────────────────────────────────────────────────────
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    DependsOn: AttachGateway
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref WebServerInstance
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-eip"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OUTPUTS
+# ─────────────────────────────────────────────────────────────────────────────
+Outputs:
+
+  WebsiteURL:
+    Description: "Public URL of the MedConnect web application"
+    Value: !Sub "http://${ElasticIP}"
+    Export:
+      Name: !Sub "${EnvironmentName}-WebsiteURL"
+
+  WebsiteURLIndex:
+    Description: "Direct link to landing page"
+    Value: !Sub "http://${ElasticIP}/index.html"
+
+  AdminLoginURL:
+    Description: "Direct link to admin login page"
+    Value: !Sub "http://${ElasticIP}/admin_login.html"
+
+  StaffLoginURL:
+    Description: "Direct link to staff login page"
+    Value: !Sub "http://${ElasticIP}/staff_login.html"
+
+  EC2PublicIP:
+    Description: "Static public IP address of the EC2 web server"
+    Value: !Ref ElasticIP
+    Export:
+      Name: !Sub "${EnvironmentName}-EC2PublicIP"
+
+  EC2InstanceId:
+    Description: "EC2 Instance ID (use for SSM Session Manager if no SSH key)"
+    Value: !Ref WebServerInstance
+
+  RDSEndpoint:
+    Description: "RDS MySQL endpoint hostname"
+    Value: !GetAtt MedConnectDB.Endpoint.Address
+    Export:
+      Name: !Sub "${EnvironmentName}-RDSEndpoint"
+
+  RDSPort:
+    Description: "RDS MySQL port"
+    Value: !GetAtt MedConnectDB.Endpoint.Port
+
+  SSHCommand:
+    Description: "SSH command to connect to the EC2 web server"
+    Value: !Sub "ssh -i <your-key.pem> ec2-user@${ElasticIP}"
+
+  DBSeedCommand:
+    Description: "MySQL command to seed the database schema (run after SSH)"
+    Value: !Sub >
+      mysql -h ${MedConnectDB.Endpoint.Address} -u medconnect_admin -p medconnect_db
+      < /var/www/html/medconnect/medconnect_db.sql
+
+  UserDataLogCommand:
+    Description: "Command to view the bootstrap log on the EC2 instance"
+    Value: "sudo tail -f /var/log/userdata.log"

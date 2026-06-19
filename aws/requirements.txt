@@ -1,0 +1,18 @@
+# MedConnect – Python Test Requirements
+# Install with: pip install -r aws/requirements.txt
+
+# ── Selenium & WebDriver ──────────────────────────────────────────────────────
+selenium==4.21.0
+webdriver-manager==4.0.1
+
+# ── Optional: pytest runner (nicer output than unittest)
+# Run with: pytest test_medconnect.py -v
+pytest==8.2.0
+
+# ── HTTP requests (used in TC-11 – Medical Centers API test)
+# (stdlib urllib is used in the test file, so requests is optional)
+requests==2.32.3
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+# Certifi – keeps SSL certificates up to date for HTTPS requests
+certifi>=2024.2.2
